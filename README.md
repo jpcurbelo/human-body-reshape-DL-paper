@@ -1,6 +1,8 @@
 # human-body-reshape-DL-paper
 Official Code for "A methodology for realistic human shape reconstruction from 2D images"
 
+![creating by deform-based global mapping](https://raw.githubusercontent.com/jpcurbelo/human-body-reshape-DL-paper/master/figures/Fig1.png)
+
 If you want to explore this repo and eventually contribute, please, follow the instructions below.
 
 ## Getting Started
