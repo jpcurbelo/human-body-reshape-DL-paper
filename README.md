@@ -18,6 +18,7 @@ To get a local copy of the project, follow these steps:
 `cd human-body-reshape-DL-paper/`
 
 #### Folder tree
+...
 human-body-reshape-DL-paper/
 ├── data/
 │   └── body_reshaper_files/
@@ -28,6 +29,7 @@ human-body-reshape-DL-paper/
 │   ├── reshaper/
 │   │   └── reshaper.py
 │   └── utils.py
+...
 
 
 ### 3-Create a virtual environment:
