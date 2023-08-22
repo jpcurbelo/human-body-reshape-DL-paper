@@ -9,7 +9,7 @@ To get a local copy of the project, follow these steps:
 
 ### 1-Clone the repository:
 
-`git clone https://github.com/jpcurbelo/3D-human-reshaper-web.git`
+`git clone https://github.com/jpcurbelo/human-body-reshape-DL-paper.git`
 
 ### 2-Navigate into the cloned directory:
 
