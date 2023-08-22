@@ -1,2 +1,2 @@
-data/
-
+# Ignore all files and subdirectories in 'data' except for the directory itself
+data/*
