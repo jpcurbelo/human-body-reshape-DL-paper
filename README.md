@@ -16,3 +16,36 @@ To get a local copy of the project, follow these steps:
 ### 2-Navigate into the cloned directory:
 
 `cd human-body-reshape-DL-paper/`
+
+#### Folder tree
+human-body-reshape-DL-paper/
+├── data/
+│   └── body_reshaper_files/
+│   └── cp_blender_files/
+│   └── obj_files/
+├── figures/
+├── src/
+│   ├── reshaper/
+│   │   └── reshaper.py
+│   └── utils.py
+
+
+### 3-Create a virtual environment:
+
+`virtualenv venv`
+
+
+### 4-Activate the virtual environment:
+
+`source venv/bin/activate`
+
+
+### 5-Install the project dependencies:
+
+`pip install -r requirements.txt`
+
+
+## The Reshaper
+
+Adapted from [3D-Human-Body-Shape](https://github.com/zengyh1900/3D-Human-Body-Shape)
+
