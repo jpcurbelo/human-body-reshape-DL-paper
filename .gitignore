@@ -1,4 +1,10 @@
-# Ignore all files in data and its subfolders
-data/**/*
+# Ignore specific files in data and its subfolders
+data/**/*.npy
+data/**/*.npz
+data/**/*.pkl
+data/**/*.txt
+data/**/*.obj
+data/**/*.csv
+
 # Except the data directory itself
 !data/
