@@ -20,13 +20,36 @@ To get a local copy of the project, follow these steps:
 #### Folder tree
 human-body-reshape-DL-paper/
 ├── data/
-│   └── body_reshaper_files/
-│   └── cp_blender_files/
-│   └── obj_files/
+│   ├── body_reshaper_files/
+│   │   └── [Files for the Body Reshaper]
+│   ├── cp_blender_files/
+│   │   └── [files for CP Blender]
+│   ├── datasets/
+│   │   ├── ds_ansur_original/
+│   │   │   └── [original ANSUR datasets]
+│   │   └── [datasets files]
+│   ├── input_files/
+│   │   └── [input files for processing]
+│   ├── obj_files/
+│   │   ├── obj_database_SPRING/
+│   │   │   ├── female/
+│   │   │   │   └── [female OBJ files]
+│   │   │   ├── male/
+│   │   │   │   └── [male OBJ files]
+│   │   └── [other OBJ files]
+│   ├── output_files/
+│   │   └── [output files]
 ├── figures/
+│   └── [figures for the paper]
 ├── src/
+│   ├── datasets/
+│   │   ├── ansur2bodyfiles.py
+│   │   └── ds_processer.py
 │   ├── reshaper/
-│   │   └── reshaper.py
+│   │   ├── avatar.py
+│   │   ├── cp_handler.py
+│   │   ├── tests_temp.py
+│   │   ├── trainer.py
 │   └── utils.py
 
 
