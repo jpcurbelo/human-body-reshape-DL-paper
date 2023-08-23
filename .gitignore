@@ -1,2 +1,4 @@
 # Ignore all files in data and its subfolders
 data/**/*
+# Except the data directory itself
+!data/
