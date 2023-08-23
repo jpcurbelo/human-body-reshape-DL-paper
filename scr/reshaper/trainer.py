@@ -20,12 +20,6 @@ sys.path.append("..")
 from utils import *
 
 
-
-# NEW_FILES_DIR = utils.NEW_FILES_DIR
-# FILES_DIR = utils.FILES_DIR
-# OBJ_DIR = os.path.join(FILES_DIR, "obj_database")
-
-
 def convert_cp(label = "female"):
     """
     Loads control points from a text file and saves them as a nested list using pickle.
@@ -351,7 +345,7 @@ def save_data_csv(meas_names, measurements, label = 'female'):
     obj_file_dir = os.path.join(OBJ_FILES_SPRING, label)
     file_list = sorted(os.listdir(obj_file_dir))
     
-    with open(os.path.join(RESHAPER_FILES_DIR, f'measurements_{label}.csv'), 'w') as outfile:
+    with open(os.path.join(DS_DIR, f'measurements_SPRING_{label}.csv'), 'w') as outfile:
         # I'm writing a header here just for the sake of readability
         outfile.write('bodyID,' + ",".join(MEASUREMENTS) + '\n')
         

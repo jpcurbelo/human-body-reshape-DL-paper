@@ -5,6 +5,11 @@ RESHAPER_FILES_DIR = os.path.join("../../data", "body_reshaper_files")
 OBJ_FILES_DIR = os.path.join("../../data", "obj_files")
 OBJ_FILES_SPRING = os.path.join(OBJ_FILES_DIR, "obj_database_SPRING")
 
+OUTPUT_FILES_DIR = os.path.join("../../data", "output_files")
+INPUT_FILES_DIR = os.path.join("../../data", "input_files")
+
+DS_DIR = "../../data/datasets/"
+
 GENDERS = ["female", "male"]
 
 MEASUREMENTS = ['weight_kg',  # 'height_cm', 'weight_kg
@@ -68,6 +73,25 @@ V_NUM = 12500
 F_NUM = 25000
 D_BASIS_NUM = 10
 V_BASIS_NUM = 10
+
+ROTATION_DICT = {"x": 0, "y": 0, "z": 52}
+
+def load_input_data():
+    '''
+    Import input data (gender and measurments)
+    Returns 'gender', abd a list of measurements
+    '''
+    f = open(os.path.join(INPUT_FILES_DIR, f'input_data_avatar.csv'))
+    
+    measurements = list()
+    first_line = f.readline()
+    gender = first_line.strip('\n').split(',')[1]   
+    for line in f:
+        measurements.append(float(line.split(',')[1]))
+     
+    f.close()
+     
+    return gender, measurements
 
 
 
