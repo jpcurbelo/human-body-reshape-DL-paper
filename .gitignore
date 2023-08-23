@@ -2,7 +2,10 @@
 data/**/*.npy
 data/**/*.npz
 data/**/*.pkl
-data/**/*.obj
+# data/**/*.obj
+
+data/obj_files/obj_database_SPRING/female/*.obj
+data/obj_files/obj_database_SPRING/male/*.obj
 
 # Except the data directory itself
 !data/
