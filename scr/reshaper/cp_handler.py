@@ -50,7 +50,7 @@ def extract_cp():
                 cpf.write(f'# Control Points (20 measurements)\n')
 
                 # read info from measurement files
-                for i, m in enumerate(MEASUREMENTS):
+                for i, m in enumerate(MEASUREMENTS[1:]):   #  skip 0 - weight
                     cpf.write(f'# {i + 2}-{m}\n')
                     measname = f"{i + 2}_{m}_{gender}.obj"
 

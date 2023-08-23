@@ -1,2 +1,2 @@
-# Ignore all files and subdirectories in 'data' except for the directory itself
-data/*
+# Ignore all files in data and its subfolders
+data/**/*

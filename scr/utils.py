@@ -7,7 +7,8 @@ OBJ_FILES_SPRING = os.path.join(OBJ_FILES_DIR, "obj_database_SPRING")
 
 GENDERS = ["female", "male"]
 
-MEASUREMENTS = ['stature_cm', 
+MEASUREMENTS = ['weight_kg',  # 'height_cm', 'weight_kg
+                'stature_cm', 
                 'neck_base_girth', 
                 'chest_girth',
                 'waist_girth',

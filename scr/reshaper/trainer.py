@@ -64,10 +64,15 @@ def convert_cp(label = "female"):
 
 
 def convert_template(label = "female"):
-    '''
-    Loads facet information from .txt ('template_mitacs.txt') to .npy ('facet_mitacs.npy')
-    Returns a list of facets previously defined
-    '''
+    """
+    Converts facet information from a .txt file ('facets_template_3DHBS.txt') to a .npy file ('facets_template_3DHBS.npy').
+
+    Args:
+        label (str, optional): The label for the template. Defaults to "female".
+
+    Returns:
+        np.ndarray: A list of facets previously defined.
+    """
     print('[2] starting to load facets from txt for %s'%(label))
     start = time.time()
     facets = np.zeros((F_NUM, 3), dtype=int)
@@ -89,10 +94,17 @@ def convert_template(label = "female"):
 
 
 def obj2npy(label = "female"): 
-    '''
-    Loads data (vertices) from *.obj files in the database
-    Returns a numpy array containing the vertices data
-    '''
+    """
+    Loads data (vertices) from *.obj files in the database and returns a numpy array containing the vertices data.
+
+    Args:
+        label (str, optional): The label for the template. Defaults to "female".
+
+    Returns:
+        np.ndarray: A numpy array containing the vertices data.
+    """
+
+
     print('[3] starting to load vertices from .obj files for %s'%(label))
     start = time.time()    
     obj_file_dir = os.path.join(OBJ_FILES_SPRING, label)
@@ -130,16 +142,28 @@ def obj2npy(label = "female"):
     
     print('\n[3] finished loading vertices from .obj files for %s in %fs' %(label, time.time() - start))
     
-    # print(vertices)
     return vertices 
 
 
 def calculate_weights(cp, vertices, facets, label):
+    """
+    Calculates and stores weight-related information based on given vertices and facets.
+
+    Args:
+        cp (dict): A dictionary containing control points.
+        vertices (np.ndarray): Numpy array containing vertices data.
+        facets (np.ndarray): Numpy array containing facet information.
+        label (str): The label for the template.
+
+    Returns:
+        volumes, weights (np.ndarray): Numpy arrays containing volume and weight information.
+    """
+
     # load measures data
     weights = np.zeros((3, vertices.shape[0])) # store 4 values of weights to compare later
     volumes = np.zeros((1, vertices.shape[0])) 
     print(weights.shape, vertices.shape[0])
-    for i in range(5):   #### 5 bodies for NOW ->  vertices.shape[0]
+    for i in range(vertices.shape[0]):   #### 5 bodies for NOW ->  vertices.shape[0]
         sys.stdout.write('\r>> calculating weights of %s body %d'%(label, i + 1))
         sys.stdout.flush()
         
@@ -147,7 +171,7 @@ def calculate_weights(cp, vertices, facets, label):
         # calculate the person's weight
         vol = 0.0
         # area = 0.0
-        for j in range(0, utils.F_NUM):
+        for j in range(0, F_NUM):
             f = [c - 1 for c in facets[j, :]]
             v1 = vert[f[0], :]
             v2 = vert[f[1], :]
@@ -171,13 +195,13 @@ def calculate_weights(cp, vertices, facets, label):
         weights[2, i] = (1000 * vol + 4.937) / 1.015
         volumes[0, i] = vol       
     
-    np.save(open(os.path.join(NEW_FILES_DIR, f"volumes_perfit2023_{label}.npy"), "wb"), volumes)    
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"volumes_{label}.npy"), "wb"), volumes)    
 
-    obj_file_dir = os.path.join(OBJ_DIR, label)
+    obj_file_dir = os.path.join(OBJ_FILES_SPRING, label)
     file_list = sorted(os.listdir(obj_file_dir))
     
     weights_scr = ['Volume', '3DHBSh', 'Aqua-Calc', 'Article 1987']
-    with open(os.path.join(NEW_FILES_DIR, f"weights_perfit2023_{label}.csv"), 'w') as outfile:
+    with open(os.path.join(RESHAPER_FILES_DIR, f"weights_{label}.csv"), 'w') as outfile:
         # I'm writing a header here just for the sake of readability
         outfile.write('bodyID,' + ",".join(weights_scr) + '\n')
         
@@ -189,57 +213,73 @@ def calculate_weights(cp, vertices, facets, label):
 
     print('\n')
 
+    return(volumes, weights)
 
-def measure_bodies(cp, vertices, facets, label = "female"):
-    '''
-    Calculates the measurement data and convert to npy
-    Returns a list of measurements
-    '''
+
+def measure_bodies(cp, vertices, facets, vol, label = "female"):
+    """
+    Calculates measurement data based on given control points, vertices, and facets.
+
+    Args:
+        cp (dict): A dictionary containing control points.
+        vertices (np.ndarray): Numpy array containing vertices data.
+        facets (np.ndarray): Numpy array containing facet information.
+        vol (np.ndarray): Numpy array containing subjects' volume information.
+        label (str, optional): The label for the template. Defaults to "female".
+
+    Returns:
+        np.ndarray: A numpy array containing measurement data.
+    """
+
     print('[4] starting to measure bodies from .obj data for %s'%(label))
     start = time.time()
     
     # load measures data
-    measurements = np.zeros((utils.M_NUM, vertices.shape[0]))
+    measurements = np.zeros((M_NUM, vertices.shape[0]))
     for i in range(vertices.shape[0]):   #### 5 bodies for NOW  vertices.shape[0]
         sys.stdout.write('\r>> calculating measurements of %s body %d'%(label, i + 1))
         sys.stdout.flush()
-        measurements[:, i] = calc_measurements(cp, vertices[i, :, :], facets, label, i).flat
+        measurements[:, i] = calc_measurements(cp, vertices[i, :, :], facets, vol[i], label, i).flat
         
-    np.save(open(os.path.join(NEW_FILES_DIR, f"measurements_perfit2023_{label}.npy"), "wb"), measurements)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"measurements_{label}.npy"), "wb"), measurements)
     
     # calculate t-value from mean and standard deviation
-    mean_measurements = np.array(measurements.mean(axis=1), dtype=np.float64).reshape(utils.M_NUM, 1)
-    std_measurements = np.array(measurements.std(axis=1), dtype=np.float64).reshape(utils.M_NUM, 1)
+    mean_measurements = np.array(measurements.mean(axis=1), dtype=np.float64).reshape(M_NUM, 1)
+    std_measurements = np.array(measurements.std(axis=1), dtype=np.float64).reshape(M_NUM, 1)
     t_measurements = (measurements - mean_measurements) / std_measurements
     
-    np.save(open(os.path.join(NEW_FILES_DIR, f'mean_measurements_perfit2023_{label}.npy'), "wb"), mean_measurements)
-    # save_data_csv(mean_measurements, 'mean_measurements', 'measurement', label)
-    np.save(open(os.path.join(NEW_FILES_DIR, f"std_measurements_perfit2023_{label}.npy"), "wb"), std_measurements)
-    np.save(open(os.path.join(NEW_FILES_DIR, f"t_measurements_perfit2023_{label}.npy"), "wb"), t_measurements)
-    
-    # save_data_csv(measurements, 'measurements', 'measurement', label)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f'mean_measurements_{label}.npy'), "wb"), mean_measurements)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"std_measurements_{label}.npy"), "wb"), std_measurements)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"t_measurements_{label}.npy"), "wb"), t_measurements)
     
     print('\n[4] finished measuring bodies from .obj data for %s in %fs' %(label, time.time() - start))
     
     return measurements
 
 
-def calc_measurements(cp, vertices, facet, label, i):
-    '''
-    Calculates measurement data from given vertices by control points
-    Returns an array of M_NUM measurements
-    '''
-    measurement_list = []
-    # Read the the person's weight
-    vol = np.load(open(os.path.join(NEW_FILES_DIR, f'volumes_perfit2023_{label}.npy'), "rb"), 
-                        allow_pickle=True)[0, i]
+def calc_measurements(cp, vertices, facet, vol, label, i):
+    """
+    Calculates measurement data from given control points and vertices.
 
+    Args:
+        cp (dict): A dictionary containing control points.
+        vertices (np.ndarray): Numpy array containing vertices data.
+        facet (np.ndarray): Numpy array containing facet information.
+        vol (float): Subject's i volume value.
+        label (str): The label for the template.
+        i (int): Index for the body being processed.
+
+    Returns:
+        np.ndarray: A numpy array containing measurement data.
+    """
+
+    measurement_list = []
+    # Calculate the the person's weight
     weight = KHUMANBODY_DENSITY * vol
         
     measurement_list.append(weight)   #* 10
     # calculate other measures
-    # for i, measurement in enumerate(cp):
-    for i, meas in enumerate(MEASUREMENTS[1:]):   # skip 0 - weight
+    for i, meas in enumerate(MEASUREMENTS[1:]):   #  skip 0 - weight
 
         length = 0.0
         length = calc_length(MEAS_LABELS[meas], cp[i], vertices, meas)
@@ -249,9 +289,18 @@ def calc_measurements(cp, vertices, facet, label, i):
 
 
 def calc_length(lab, cplist, vertices, meas):
-    '''
+    """
+    Calculates the length based on given points, control points, and vertices.
 
-    '''
+    Args:
+        lab (int): The label indicating the type of length calculation.
+        cplist (list): A list of control points.
+        vertices (np.ndarray): Numpy array containing vertices data.
+        meas (int): The measurement type.
+
+    Returns:
+        float: The calculated length.
+    """
 
     length = 0.0
     p2 = vertices[int(cplist[0]) - 1]
@@ -275,35 +324,8 @@ def calc_length(lab, cplist, vertices, meas):
         u_new = np.linspace(u.min(), u.max(), 1000)
         x_new, y_new = splev(u_new, tck, der=0)
         
-        if meas == 'hips_buttock_girth':   #'chest_girth':   #'hips_buttock_girth':    #'waist_girth':
-
-            # Rotate the points by -53 degrees
-            theta = np.radians(-52)
-            c, s = np.cos(theta), np.sin(theta)
-            R = np.array(((c, -s), (s, c)))
-            pts2 = np.dot(pts, R)
-            # x_new2 = np.dot(x_new, R)
-
-            xy = np.vstack((x_new, y_new)).T
-            rotated_xy = np.dot(xy, R)
-
-            plt.figure(figsize=(8, 6))
-
-            plt.plot(pts2[:,0] * 100, pts2[:,1] * 100, 'ro')
-            plt.plot(rotated_xy[:,0] * 100, rotated_xy[:,1] * 100, 'b--')
-            # plt.title(meas)
-            plt.xlabel('x-axis ($cm$)', fontsize=20)
-            plt.ylabel('y-axis ($cm$)', fontsize=20)
-            plt.axis('equal')
-            plt.xticks(fontsize=18)
-            plt.yticks(fontsize=18)
-            # plt.savefig(f'{meas}.png', format='png')
-            plt.savefig(f'{meas}.eps', format='eps')
-            plt.show()  
-        
         length = 0.0
         p2 = np.array([x_new[0], y_new[0]])
-        # print(range(1, len(x_new)))
         for i in range(1, len(x_new)):
             p1 = p2
             p2 = np.array([x_new[i], y_new[i]])
@@ -314,14 +336,22 @@ def calc_length(lab, cplist, vertices, meas):
 
 
 def save_data_csv(meas_names, measurements, label = 'female'):
-    '''
-    Writes the nparray to disk
-    '''
+    """
+    Writes measurement data to a CSV file.
+
+    Args:
+        meas_names (list): List of measurement names.
+        measurements (np.ndarray): Numpy array containing measurement data.
+        label (str, optional): The label for the template. Defaults to 'female'.
+
+    Returns:
+        None
+    """
     
-    obj_file_dir = os.path.join(OBJ_DIR, label)
+    obj_file_dir = os.path.join(OBJ_FILES_SPRING, label)
     file_list = sorted(os.listdir(obj_file_dir))
     
-    with open(os.path.join(NEW_FILES_DIR, f'measurements_perfit2023_{label}.csv'), 'w') as outfile:
+    with open(os.path.join(RESHAPER_FILES_DIR, f'measurements_{label}.csv'), 'w') as outfile:
         # I'm writing a header here just for the sake of readability
         outfile.write('bodyID,' + ",".join(MEASUREMENTS) + '\n')
         
@@ -329,28 +359,33 @@ def save_data_csv(meas_names, measurements, label = 'female'):
             bodyID = file_list[i].split('.')[0][:]
             meas_list = [measurements[j][i] for j in range(measurements.shape[0])]
             aux_list = [str(round(num, 2)) for num in meas_list]
-            # aux_list = [str(num) for num in meas_list]
             outfile.write(bodyID + ',' + ",".join(aux_list) + '\n')
 
 
 def load_def_data(vertices, facet, label = "female"):
-    '''
-    Loads deform-based data (See Sumner_Popovic_SIGGRAPH_2004)
-    Returns a list containing [def_inv_mean, Qdeform, Qdets]
-    "The goal of deformation transfer is to transfer the change in shape
-        exhibited by the source deformation onto the target." Sumner_Popovic_SIGGRAPH_2004
-    '''
+    """
+    Loads deform-based data using vertices and facets.
+
+    Args:
+        vertices (np.ndarray): Numpy array containing vertices data.
+        facet (np.ndarray): Numpy array containing facet information.
+        label (str, optional): The label for the template. Defaults to 'female'.
+
+    Returns:
+        tuple: A tuple containing def_inv_mean, Qdeform, and Qdets arrays.
+    """
+
     print('[5] starting to load deform-based data from vertices and facets for %s'%(label))
     start = time.time()
     Qdets = []
 
     # mean of vertices values for every .obj file (mean body)
-    mean_vertices = np.array(vertices.mean(axis=0), dtype=np.float64).reshape(utils.V_NUM, 3)
+    mean_vertices = np.array(vertices.mean(axis=0), dtype=np.float64).reshape(V_NUM, 3)
     # inverse of mean vertices matrix, V^-1
     def_inv_mean = get_inv_mean(mean_vertices, facet)
     # calculate deformation matrix of each body shape
-    Qdeform = np.zeros((vertices.shape[0], utils.F_NUM, 9))
-    for i in range(0, utils.F_NUM):
+    Qdeform = np.zeros((vertices.shape[0], F_NUM, 9))
+    for i in range(0, F_NUM):
         sys.stdout.write('\r>>  loading %s deformation of facet %d'%(label, i))
         sys.stdout.flush()
         v = [k - 1 for k in facet[i, :]]
@@ -366,21 +401,20 @@ def load_def_data(vertices, facet, label = "female"):
             Qdeform[j, i, :] = Q.flat
 
     # reshape dets of Q
-    Qdets = np.array(Qdets, dtype=np.float64).reshape(utils.F_NUM, vertices.shape[0])
+    Qdets = np.array(Qdets, dtype=np.float64).reshape(F_NUM, vertices.shape[0])
         
     # save data
-    #f'cp_perfit2022_{label}.npy'
-    np.save(open(os.path.join(NEW_FILES_DIR, f"Qdets_perfit2023_{label}.npy"), "wb"), Qdets)
-    np.save(open(os.path.join(NEW_FILES_DIR, f"def_inv_mean_perfit2023_{label}.npy"), "wb"), def_inv_mean)
-    np.save(open(os.path.join(NEW_FILES_DIR, f"Qdeform_perfit2023_{label}.npy"), "wb"), Qdeform)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"Qdets_{label}.npy"), "wb"), Qdets)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"def_inv_mean_{label}.npy"), "wb"), def_inv_mean)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"Qdeform_{label}.npy"), "wb"), Qdeform)
         
     mean_deform = np.array(Qdeform.mean(axis=0), dtype=np.float64)
-    mean_deform.shape = (utils.F_NUM, 9)
+    mean_deform.shape = (F_NUM, 9)
     std_deform = np.array(Qdeform.std(axis=0), dtype=np.float64)
-    std_deform.shape = (utils.F_NUM, 9)
+    std_deform.shape = (F_NUM, 9)
 
-    np.save(open(os.path.join(NEW_FILES_DIR, f"Qdeform_mean_perfit2023_{label}.npy"), "wb"), mean_deform)
-    np.save(open(os.path.join(NEW_FILES_DIR, f"Qdeform_std_perfit2023_{label}.npy"), "wb"), std_deform)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"Qdeform_mean_{label}.npy"), "wb"), mean_deform)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"Qdeform_std_{label}.npy"), "wb"), std_deform)
 
     print('\n[5] finished loading deform-based data from vertices and facets for %s in %fs' %(label, time.time() - start))
 
@@ -388,14 +422,21 @@ def load_def_data(vertices, facet, label = "female"):
 
 
 def get_inv_mean(mean_vertices, facet):
-    '''
-    Calculates (and Return) the inverse of mean vertices matrix, V^-1
-    Returns the matrix of vertices (inverse of the 3x3 matrix V)
-    '''    
+    """
+    Calculates the inverse of the mean vertices matrix V^-1.
+
+    Args:
+        mean_vertices (np.ndarray): Numpy array containing mean vertices data.
+        facet (np.ndarray): Numpy array containing facet information.
+
+    Returns:
+        np.ndarray: The matrix of vertices (inverse of the 3x3 matrix V).
+    """
+
     print("[*] starting to calculate the inverse of mean vertices matrix, V^-1")
     start = time.time()
-    def_inv_mean = np.zeros((utils.F_NUM, 3, 3))
-    for i in range(0, utils.F_NUM):
+    def_inv_mean = np.zeros((F_NUM, 3, 3))
+    for i in range(0, F_NUM):
         v = [j - 1 for j in facet[i, :]]
         # x, y, z vertices
         v1 = mean_vertices[v[0], :]
@@ -411,11 +452,18 @@ def get_inv_mean(mean_vertices, facet):
         
             
 def assemble_face(v1, v2, v3):
-    '''
-    Imports the '4th point' of the triangle (cross product), and calculate the deformation
-    (fourth vertex in the direction perpendicular to the triangle - Sumner_Popovic_SIGGRAPH_2004)
-    Returns an array (3x3 matrix) where the 3 columns are vectors v21, v31 and v41 
-    ''' 
+    """
+    Assembles a face matrix based on input vertices.
+
+    Args:
+        v1 (np.ndarray): First vertex.
+        v2 (np.ndarray): Second vertex.
+        v3 (np.ndarray): Third vertex.
+
+    Returns:
+        np.ndarray: A 3x3 matrix where the columns are vectors v21, v31, and v41.
+    """
+
     # See Eq. 1 in Sumner_Popovic_SIGGRAPH_2004
     # vectors v21 and v31
     v21 = np.array((v2 - v1), dtype=np.float64)
@@ -428,16 +476,26 @@ def assemble_face(v1, v2, v3):
 
 
 def rfe_local(Qdets, Qdeform, measurements, label = "female", k_features = 9):
-    '''
-    Calculates relationship directly (recursive feature elimination (RFE))
-    Returns a list containing the rfe matrices and masks
-    '''    
+    """
+    Performs recursive feature elimination (RFE) for relationship calculation.
+
+    Args:
+        Qdets (np.ndarray): Numpy array containing Qdets data.
+        Qdeform (np.ndarray): Numpy array containing Qdeform data.
+        measurements (np.ndarray): Numpy array containing measurements data.
+        label (str, optional): The label for the template. Defaults to 'female'.
+        k_features (int, optional): Number of selected features in RFE. Defaults to 9.
+
+    Returns:
+        tuple: A tuple containing rfe_mats and masks arrays.
+    """
+
     print('[7] starting recursive feature elimination (RFE) for %s'%(label))
     start = time.time()    
 
     body_num = Qdeform.shape[0]
-    mean_measurements = np.array(measurements.mean(axis=1)).reshape(utils.M_NUM, 1)
-    std_measurements = np.array(measurements.std(axis=1)).reshape(utils.M_NUM, 1)
+    mean_measurements = np.array(measurements.mean(axis=1)).reshape(M_NUM, 1)
+    std_measurements = np.array(measurements.std(axis=1)).reshape(M_NUM, 1)
     # calculate t-value from mean and standard deviation
     t_measurements = (measurements - mean_measurements) / std_measurements
     X = t_measurements.transpose()
@@ -446,17 +504,16 @@ def rfe_local(Qdets, Qdeform, measurements, label = "female", k_features = 9):
     # multiprocessing — Process-based parallelism
     pool = Pool(processes = 8)
     tasks = [(i, Qdets[i,:], Qdeform[:,i,:], body_num, X, measurements, 
-                k_features, label) for i in range(utils.F_NUM)]
+                k_features, label) for i in range(F_NUM)]
     results = pool.starmap(rfe_multiprocess, tasks)
-    # results = pool.map(rfe_multiprocess, tasks)
     pool.close()
     pool.join()         
 
-    rfe_mats = np.array([elem[0] for elem in results]).reshape(utils.F_NUM, 9, k_features)
-    masks = np.array([elem[1] for elem in results]).reshape(utils.F_NUM, utils.M_NUM).transpose() 
+    rfe_mats = np.array([elem[0] for elem in results]).reshape(F_NUM, 9, k_features)
+    masks = np.array([elem[1] for elem in results]).reshape(F_NUM, M_NUM).transpose() 
 
-    np.save(open(os.path.join(NEW_FILES_DIR, f"rfemats_perfit2023_{label}.npy"), "wb"), rfe_mats)
-    np.save(open(os.path.join(NEW_FILES_DIR, f"rfemasks_perfit2023_{label}.npy"), "wb"), masks)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"rfemats_{label}.npy"), "wb"), rfe_mats)
+    np.save(open(os.path.join(RESHAPER_FILES_DIR, f"rfemasks_{label}.npy"), "wb"), masks)
 
     print('[7] finished recursive feature elimination (RFE) for %s in %fs' % (label, time.time() - start))
 
@@ -488,7 +545,7 @@ def rfe_multiprocess(i, Qdets, Qdeform, body_num, X, measurements, k_features, l
     # print('masks\n', masks)  
     # aux = input("enter...") 
 
-    flag = np.array(masks).reshape(utils.M_NUM, 1)
+    flag = np.array(masks).reshape(M_NUM, 1)
     flag = flag.repeat(body_num, axis=1)   
 
     # Calculte linear mapping matrices
@@ -513,9 +570,23 @@ def rfe_multiprocess(i, Qdets, Qdeform, body_num, X, measurements, k_features, l
 
 
 def build_sparse_matrix(m_dataset, basis_num):
-    '''
-    Builds sparse matrix
-    '''
+    """
+    Performs recursive feature elimination (RFE) for a specific facet.
+
+    Args:
+        i (int): Index of the current facet.
+        Qdets (np.ndarray): Numpy array containing Qdets data.
+        Qdeform (np.ndarray): Numpy array containing Qdeform data.
+        body_num (int): Number of body meshes.
+        X (np.ndarray): Numpy array containing transformed measurements.
+        measurements (np.ndarray): Numpy array containing measurements data.
+        k_features (int): Number of selected features in RFE.
+        label (str, optional): The label for the template. Defaults to 'female'.
+
+    Returns:
+        list: A list containing the mapping matrix and mask for the current facet.
+    """
+
     shape = (m_dataset.shape[1] * basis_num, m_dataset.shape[0] * basis_num)
     data = []
     rowid = []
@@ -531,20 +602,29 @@ def build_sparse_matrix(m_dataset, basis_num):
 
 
 def get_def2vert_matrix(def_inv_mean, facets, label="female"):
-    '''
-    Constructs the related matrix A to change deformation into vertices
-    '''
-    print('[8] starting deformation maxtrices')
+    """
+    Constructs the related matrix A to change deformation into vertices.
+
+    Args:
+        def_inv_mean (np.ndarray): Numpy array containing the inverse mean vertices matrix.
+        facets (np.ndarray): Numpy array containing facets data.
+        label (str, optional): The label for the template. Defaults to 'female'.
+
+    Returns:
+        sp.sparse.coo_matrix: A sparse COO matrix representing the transformation from deformation to vertices.
+    """
+
+    print('[8] starting deformation matrices')
     start = time.time()    
 
     data = []
     rowidx = []
     colidx = []
     r = 0
-    off = utils.V_NUM * 3
-    shape = (utils.F_NUM * 9, (utils.V_NUM + utils.F_NUM) * 3)
+    off = V_NUM * 3
+    shape = (F_NUM * 9, (V_NUM + F_NUM) * 3)
 
-    for i in range(0, utils.F_NUM):
+    for i in range(0, F_NUM):
         coeff = construct_coeff_mat(def_inv_mean[i])
         v = [c - 1 for c in facets[i, :]]
         v1 = range(v[0] * 3, v[0] * 3 + 3)
@@ -559,7 +639,7 @@ def get_def2vert_matrix(def_inv_mean, facets, label="female"):
             r += 3
 
     def2vert = sp.sparse.coo_matrix((data, (rowidx, colidx)), shape=shape)
-    np.savez(os.path.join(NEW_FILES_DIR, f"def2vert_perfit2023_{label}"), row = def2vert.row, col = def2vert.col,
+    np.savez(os.path.join(RESHAPER_FILES_DIR, f"def2vert_{label}"), row = def2vert.row, col = def2vert.col,
                 data = def2vert.data, shape = def2vert.shape)
 
     print(f'[8] finished deformation maxtrices in {round(time.time() - start, 1)} s')
@@ -568,10 +648,16 @@ def get_def2vert_matrix(def_inv_mean, facets, label="female"):
 
 
 def construct_coeff_mat(mat):
-    '''
-    Constructs the matrix = v_mean_inv.dot(the matrix consists of 0 -1...)
+    """
+    Constructs the coefficient matrix for deformation calculations.
 
-    '''
+    Args:
+        mat (np.ndarray): The input matrix.
+
+    Returns:
+        np.ndarray: The constructed coefficient matrix.
+    """
+
     tmp = -mat.sum(0)
     
     return np.row_stack((tmp, mat)).transpose()
@@ -608,48 +694,58 @@ def train():
         if not os.path.exists(vert_gender_file):
             vertices = obj2npy(label = gender)
         else:
-            facets = np.load(open(facets_file, "rb"), allow_pickle=True)
             vertices = np.load(open(vert_gender_file, "rb"), allow_pickle=True)
 
-        print(vertices.shape)
+        ## generate and load volumes from obj to npy file
+        vol_gender_file = os.path.join(RESHAPER_FILES_DIR, f'volumes_{gender}.npy')
+        if not os.path.exists(vol_gender_file):
+            vol, _ = calculate_weights(cp, vertices, facets, label = gender)
+        else:
+            vol = np.load(open(vol_gender_file, "rb"), allow_pickle=True)[0, :]
+
+        ## generate and load measurements from obj to npy file
+        meas_gender_file = os.path.join(RESHAPER_FILES_DIR, f'measurements_{gender}.npy')
+        if not os.path.exists(meas_gender_file):
+            measurements = measure_bodies(cp, vertices, facets, vol, label = gender)
+        else:
+            measurements = np.load(open(meas_gender_file, "rb"), allow_pickle=True)
+
+        ## save measurements to csv file
+        save_data_csv(MEASUREMENTS, measurements, label=gender)
 
 
+        ## generate and deformation matrices to npy file
+        def2vert_gender_file = os.path.join(RESHAPER_FILES_DIR, f'def2vert_{gender}.npz')
+        if not os.path.exists(def2vert_gender_file):
 
+            ## generate and load def_inv_mean, Qdeform, Qdets from obj to npy file
+            def_inv_mean_gender_file = os.path.join(RESHAPER_FILES_DIR, f'def_inv_mean_{gender}.npy')
+            Qdeform_gender_file = os.path.join(RESHAPER_FILES_DIR, f'Qdeform_{gender}.npy')
+            Qdets_gender_file = os.path.join(RESHAPER_FILES_DIR, f'Qdets_{gender}.npy')
+            if not os.path.exists(def_inv_mean_gender_file) or   \
+                not os.path.exists(Qdeform_gender_file) or  \
+                not os.path.exists(Qdets_gender_file):
 
+                def_inv_mean, Qdeform, Qdets = load_def_data(vertices, facets, label = gender)
 
+            else:
+                def_inv_mean = np.load(open(def_inv_mean_gender_file, "rb"), allow_pickle=True)
+                Qdeform = np.load(open(Qdeform_gender_file, "rb"), allow_pickle=True)
+                Qdets = np.load(open(Qdets_gender_file, "rb"), allow_pickle=True)
+                    
+            ## generate and load rfe_mats from obj to npy file
+            rfe_mats_gender_file = os.path.join(RESHAPER_FILES_DIR, f'rfemats_{gender}.npy')
+            if not os.path.exists(rfe_mats_gender_file):
+                rfe_mats, _ = rfe_local(Qdets, Qdeform, measurements, label = gender, k_features = 9)
+            else:
+                rfe_mats = np.load(open(rfe_mats_gender_file, "rb"), allow_pickle=True)
 
-        # 
-        # weights = calculate_weights(cp, vertices, facets, label = gender)
-        # measurements = measure_bodies(cp, vertices, facets, label = gender)
-        # save_data_csv(MEASUREMENTS, measurements, label=gender)
-        # def_inv_mean, Qdeform, Qdets = load_def_data(vertices, facets, label = gender)
-        # rfe_mats, masks = rfe_local(Qdets, Qdeform, measurements, label = gender, k_features = 9)
-        # def2vert = get_def2vert_matrix(def_inv_mean, facets, label = gender)
+            def2vert = get_def2vert_matrix(def_inv_mean, facets, label = gender)
 
-        # 
-        # facets = np.load(open(os.path.join(NEW_FILES_DIR, 'facets_template_3DHBSh.npy'), "rb"), allow_pickle=True)
-        # vertices = np.load(open(os.path.join(NEW_FILES_DIR, f'vertices_perfit2023_{gender}.npy'), "rb"),   \
-        #                         allow_pickle=True)
+        else:
+            def2vert = np.load(open(def2vert_gender_file, "rb"), allow_pickle=True)        
+
         
-
-        # measurements = measure_bodies(cp, vertices, facets, label = gender)
-        
-        # measurements = np.load(open(os.path.join(NEW_FILES_DIR, f'measurements_perfit2023_{gender}.npy'), "rb"),   \
-        #                         allow_pickle=True)
-        # def_inv_mean = np.load(open(os.path.join(NEW_FILES_DIR, f'def_inv_mean_perfit2023_{gender}.npy'), "rb"),   \
-        #                   allow_pickle=True)
-        # Qdeform = np.load(open(os.path.join(NEW_FILES_DIR, f'Qdeform_perfit2023_{gender}.npy'), "rb"),    \
-        #                   allow_pickle=True)
-        # Qdets = np.load(open(os.path.join(NEW_FILES_DIR, f'Qdets_perfit2023_{gender}.npy'), "rb"),    \
-        #                   allow_pickle=True)
-        # # rfe_mats = np.load(open(os.path.join(NEW_FILES_DIR, 'rfemats_perfit2023_{gender}.npy'), "rb"),    \
-        # #                    allow_pickle=True)
-
-
-        # rfe_mats, masks = rfe_local(Qdets, Qdeform, measurements, label = gender, k_features = 9)
-        # def2vert = get_def2vert_matrix(def_inv_mean, facets, label = gender)
-        
-
 # ===========================================================================    
 
 if __name__ == "__main__":
