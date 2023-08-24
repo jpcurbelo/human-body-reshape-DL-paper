@@ -87,6 +87,20 @@ V_BASIS_NUM = 10
 
 ROTATION_DICT = {"x": 0, "y": 0, "z": 52}
 
+
+IMG_SIZE_ORIG = 400
+IMG_SIZE_4NN = 224
+WIDTH = IMG_SIZE_4NN
+HEIGHT = IMG_SIZE_4NN
+CHAN = 1
+
+SIL_FILES_DIR = os.path.join(DS_DIR , f"silhouettes_blender{IMG_SIZE_ORIG}")
+SIL_FILES_DIR_DICT = {
+    name: os.path.join(SIL_FILES_DIR, f"silhouettes_{name}")
+    for name in OBJ_FILES_DS_DIR_DICT.keys()
+}
+
+
 def load_input_data():
     '''
     Import input data (gender and measurments)

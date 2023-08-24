@@ -5,7 +5,7 @@ data/**/*.pkl
 # data/**/*.obj
 
 data/obj_files/obj_database_*/**/*.obj
-data/datasets/silhouettes_blender400/silhouettes_*/**/**/*.png
+data/datasets/silhouettes_blender*/silhouettes_*/**/**/*.png
 
 # Except the data directory itself
 !data/
