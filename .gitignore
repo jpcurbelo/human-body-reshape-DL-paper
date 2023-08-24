@@ -6,6 +6,10 @@ data/**/*.pkl
 
 data/obj_files/obj_database_SPRING/female/*.obj
 data/obj_files/obj_database_SPRING/male/*.obj
+data/obj_files/obj_database_ANSURI/female/*.obj
+data/obj_files/obj_database_ANSURI/male/*.obj
+data/obj_files/obj_database_ANSURII/female/*.obj
+data/obj_files/obj_database_ANSURII/male/*.obj
 
 # Except the data directory itself
 !data/

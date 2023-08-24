@@ -30,12 +30,12 @@ class Avatar:
 
         self.gender = gender
         self.input_data = np.zeros(M_NUM).transpose()
-        self.imputed_data = np.zeros(M_NUM).transpose()
         self.output_data = np.zeros(M_NUM).transpose()
         self.vertices = np.zeros((V_NUM, 3))
 
         ## Assign measurements to 20-sized array
         self.input_data = input_data
+        self.imputed_data = self.input_data.copy()
 
     # Imputation for missing data
     def predict(self, db_name="TOTAL"):
@@ -89,7 +89,7 @@ class Avatar:
             return self.imputed_data
         
 
-    def create_obj_file(self, ava_dir=OUTPUT_FILES_DIR):
+    def create_obj_file(self, ava_dir=OUTPUT_FILES_DIR, ava_name=None):
         """Creates a wavefront.obj file from the measurements (input) and data from training.
         First, updates [vertices, normals, facets] by mapping the input data with the rfe_matrices
 
@@ -107,7 +107,11 @@ class Avatar:
         # vertices = self.rotate_vertices(vertices)
 
         self.vertices = vertices
-        out_dir = os.path.join(ava_dir, f"model_{self.gender}.obj")
+
+        if ava_name == None:
+            out_dir = os.path.join(ava_dir, f"model_{self.gender}.obj")
+        else:
+            out_dir = os.path.join(ava_dir, f"{ava_name}.obj")
 
         with open(out_dir, "w") as file:
             for i in range(0, vertices.shape[0]):

@@ -9,7 +9,6 @@ from utils import *
 
 DS_DIR = "../../data/datasets/"
 DS_ANSUR_DIR = os.path.join(DS_DIR, "ds_ansur_original")
-file_encoding = "ISO-8859-1"  
 
 ANSURI_MEAS = ['WEIGHT',
               'STATURE',
@@ -55,8 +54,6 @@ ANSURII_MEAS = ['weightkg',
               'chestdepth',
               'headcircumference']
 
-DATASETS = ['ANSURI', 'ANSURII']
-
 DS_MEAS = {
     DATASETS[0]: ANSURI_MEAS,
     DATASETS[1]: ANSURII_MEAS
@@ -84,7 +81,7 @@ def generateANSURfiles():
 def load_ds(ds, gender):
 
     ds_dir = os.path.join(DS_ANSUR_DIR, f"{ds}_{gender}.csv")
-    df = pd.read_csv(ds_dir, encoding = file_encoding, converters={'ID': str})
+    df = pd.read_csv(ds_dir, encoding = FILE_ENCODING, converters={'ID': str})
 
     return df
     
@@ -117,7 +114,7 @@ def generateTOTALfiles():
         
         #SPRING
         ds_dir = os.path.join(DS_DIR, f"measurements_SPRING_{gender}.csv")
-        df_spring = pd.read_csv(ds_dir, encoding = file_encoding, converters={'ID': str})
+        df_spring = pd.read_csv(ds_dir, encoding = FILE_ENCODING, converters={'ID': str})
         df_spring = df_spring[MEASUREMENTS]
         total_data.append(df_spring)
         # Save as npy file
@@ -126,7 +123,7 @@ def generateTOTALfiles():
 
         #ANSURI
         ds_dir = os.path.join(DS_DIR, f"measurements_ANSURI_{gender}.csv")
-        df_ansurI = pd.read_csv(ds_dir, encoding = file_encoding, converters={'ID': str})
+        df_ansurI = pd.read_csv(ds_dir, encoding = FILE_ENCODING, converters={'ID': str})
         total_data.append(df_ansurI)
         # Save as npy file
         file_path_npy = os.path.join(DS_DIR, f"measurements_ANSURI_{gender}.npy")
@@ -134,7 +131,7 @@ def generateTOTALfiles():
 
         #ANSURII
         ds_dir = os.path.join(DS_DIR, f"measurements_ANSURII_{gender}.csv")
-        df_ansurII = pd.read_csv(ds_dir, encoding = file_encoding, converters={'ID': str})
+        df_ansurII = pd.read_csv(ds_dir, encoding = FILE_ENCODING, converters={'ID': str})
         total_data.append(df_ansurII)
         # Save as npy file
         file_path_npy = os.path.join(DS_DIR, f"measurements_ANSURII_{gender}.npy")
@@ -145,7 +142,7 @@ def generateTOTALfiles():
 
         # Save the concatenated DataFrame to a new CSV file
         file_path = os.path.join(DS_DIR, f"measurements_TOTAL_{gender}.csv")
-        total_dataframe.to_csv(file_path, index=False, encoding=file_encoding)
+        total_dataframe.to_csv(file_path, index=False, encoding=FILE_ENCODING)
 
         # Save the concatenated DataFrame as npy file
         file_path_npy = os.path.join(DS_DIR, f"measurements_TOTAL_{gender}.npy")
