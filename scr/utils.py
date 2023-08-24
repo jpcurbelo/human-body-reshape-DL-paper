@@ -8,14 +8,20 @@ OBJ_FILES_SPRING = os.path.join(OBJ_FILES_DIR, "obj_database_SPRING")
 OBJ_FILES_ANSURI = os.path.join(OBJ_FILES_DIR, "obj_database_ANSURI")
 OBJ_FILES_ANSURII = os.path.join(OBJ_FILES_DIR, "obj_database_ANSURII")
 
+GENDERS = ["female", "male"]
+DATASETS = ['ANSURI', 'ANSURII']
+VIEWS = ['front', 'side']
+
+OBJ_FILES_DS_DIR_DICT = {
+    name: os.path.join(OBJ_FILES_DIR, f"obj_database_{name}")
+    for name in ['SPRING'] + DATASETS
+}
+
 OUTPUT_FILES_DIR = os.path.join("../../data", "output_files")
 INPUT_FILES_DIR = os.path.join("../../data", "input_files")
 
 DS_DIR = "../../data/datasets/"
 FILE_ENCODING = "ISO-8859-1"    # 'utf8'
-
-GENDERS = ["female", "male"]
-DATASETS = ['ANSURI', 'ANSURII']
 
 MEASUREMENTS = ['weight_kg',  # 'height_cm', 'weight_kg
                 'stature_cm', 

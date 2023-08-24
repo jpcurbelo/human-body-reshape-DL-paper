@@ -4,12 +4,12 @@ data/**/*.npz
 data/**/*.pkl
 # data/**/*.obj
 
-data/obj_files/obj_database_SPRING/female/*.obj
-data/obj_files/obj_database_SPRING/male/*.obj
-data/obj_files/obj_database_ANSURI/female/*.obj
-data/obj_files/obj_database_ANSURI/male/*.obj
-data/obj_files/obj_database_ANSURII/female/*.obj
-data/obj_files/obj_database_ANSURII/male/*.obj
+data/obj_files/obj_database_*/**/*.obj
+data/datasets/silhouettes_blender400/silhouettes_*/**/**/*.png
 
 # Except the data directory itself
 !data/
+
+# Ignore compiled Python files and cache directories
+__pycache__/*
+*.pyc
