@@ -26,7 +26,6 @@ except OSError as error:
     print(error)  
 
 
-
 def main():
 
     for ds_name in ['SPRING'] + DATASETS:
@@ -160,7 +159,6 @@ def imgs2npz(ds_name):
 
     imgs_view_dir = list()
 
-
     # imgs_view_dir.append(os.path.join(silhoDB_src, GENDERS[0]))
     # imgs_view_dir.append(os.path.join(silhoDB_src, GENDERS[1]))
 
@@ -169,7 +167,11 @@ def imgs2npz(ds_name):
         img_dir = os.path.join(silhoDB_src,gender)
         img_data = load_imgs(img_dir)
 
-        npz_file_name = f"silh_Xarray{IMG_SIZE_4NN}_{ds_name}_{gender}_bw.npz"
+        if TEST_FILES == True:
+            npz_file_name = f"silh_Xarray{IMG_SIZE_4NN}_{ds_name}_{gender}_bw_{TEST_FILES_NUM}test.npz"
+        else:
+            npz_file_name = f"silh_Xarray{IMG_SIZE_4NN}_{ds_name}_{gender}_bw.npz"
+            
         np.savez_compressed(os.path.join(npz_files_dir, npz_file_name), img_data)
 
 
@@ -188,7 +190,13 @@ def load_imgs(files_dir):
 
         # initialize our list of input images
         inputImages = []
-        for i, file in enumerate(files_list):
+
+        if TEST_FILES == True:
+            enum_files_list = enumerate(files_list[:TEST_FILES_NUM])
+        else:
+            enum_files_list = enumerate(files_list)
+        
+        for i, file in enum_files_list:
             
             img = cv.imread(os.path.join(view_dir, file), cv.IMREAD_GRAYSCALE)
             img = img.reshape(IMG_SIZE_4NN, IMG_SIZE_4NN, CHAN)

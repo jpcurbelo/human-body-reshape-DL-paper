@@ -1,8 +1,10 @@
 import os
+from sklearn.preprocessing import StandardScaler
 
 CP_FILES_DIR = os.path.join("../../data", "cp_blender_files")
 RESHAPER_FILES_DIR = os.path.join("../../data", "body_reshaper_files") 
 OBJ_FILES_DIR = os.path.join("../../data", "obj_files")
+MODEL_FILES_DIR =  os.path.join("../../data", "model_files")
 
 OBJ_FILES_SPRING = os.path.join(OBJ_FILES_DIR, "obj_database_SPRING")
 OBJ_FILES_ANSURI = os.path.join(OBJ_FILES_DIR, "obj_database_ANSURI")
@@ -124,6 +126,10 @@ GENDER_DICT = {"female": 0, "male": 1}
 CONTINUOUS = [x for x in KN_MEAS if x not in CATEGORICAL]
 
 SCALER = StandardScaler()
+
+## To save/load only a fraction of the img files for testing (loading RAM in training)
+TEST_FILES = True
+TEST_FILES_NUM = 100
 
 ##################################
 

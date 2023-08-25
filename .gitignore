@@ -2,6 +2,7 @@
 data/**/*.npy
 data/**/*.npz
 data/**/*.pkl
+data/**/*.keras
 # data/**/*.obj
 
 data/obj_files/obj_database_*/**/*.obj
