@@ -1,10 +1,18 @@
 import os
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-CP_FILES_DIR = os.path.join("../../data", "cp_blender_files")
-RESHAPER_FILES_DIR = os.path.join("../../data", "body_reshaper_files") 
-OBJ_FILES_DIR = os.path.join("../../data", "obj_files")
-MODEL_FILES_DIR =  os.path.join("../../data", "model_files")
+# Get the absolute path of the current script's directory
+UTILS_DIR = os.path.dirname(os.path.abspath(__file__))
+# Construct paths based on the main folder
+PROJECT_DIR = os.path.join(UTILS_DIR, '..')
+
+SCR_DIR = os.path.join(PROJECT_DIR, 'scr')
+DATA_DIR = os.path.join(PROJECT_DIR, 'data')
+
+CP_FILES_DIR = os.path.join(DATA_DIR, "cp_blender_files")
+RESHAPER_FILES_DIR = os.path.join(DATA_DIR, "body_reshaper_files") 
+OBJ_FILES_DIR = os.path.join(DATA_DIR, "obj_files")
+MODEL_FILES_DIR =  os.path.join(DATA_DIR, "model_files")
 
 OBJ_FILES_SPRING = os.path.join(OBJ_FILES_DIR, "obj_database_SPRING")
 OBJ_FILES_ANSURI = os.path.join(OBJ_FILES_DIR, "obj_database_ANSURI")
@@ -20,10 +28,10 @@ OBJ_FILES_DS_DIR_DICT = {
     for name in DBNAMES
 }
 
-OUTPUT_FILES_DIR = os.path.join("../../data", "output_files")
-INPUT_FILES_DIR = os.path.join("../../data", "input_files")
+OUTPUT_FILES_DIR = os.path.join(DATA_DIR, "output_files")
+INPUT_FILES_DIR = os.path.join(DATA_DIR, "input_files")
 
-DS_DIR = "../../data/datasets/"
+DS_DIR = os.path.join(DATA_DIR, "datasets")
 FILE_ENCODING = "ISO-8859-1"    # 'utf8'
 
 MEASUREMENTS = ['weight_kg',  # 'height_cm', 'weight_kg
@@ -90,7 +98,6 @@ V_BASIS_NUM = 10
 
 ROTATION_DICT = {"x": 0, "y": 0, "z": 52}
 
-
 IMG_SIZE_ORIG = 400
 IMG_SIZE_4NN = 224
 WIDTH = IMG_SIZE_4NN
@@ -103,11 +110,9 @@ SIL_FILES_DIR_DICT = {
     for name in OBJ_FILES_DS_DIR_DICT.keys()
 }
 
-
 ##Extractor##
 KN_MEAS = [
     "gender",
-    'weight_kg', 
     'stature_cm', 
 ]
 
@@ -118,6 +123,7 @@ UK_MEAS = [
     'thigh_girth',
     'sleeveoutseam_length',
     'waistback_length',
+    "shoulder_girth",
     'crotchheight_length',
 ]
 
@@ -125,7 +131,7 @@ CATEGORICAL = ["gender"]
 GENDER_DICT = {"female": 0, "male": 1}
 CONTINUOUS = [x for x in KN_MEAS if x not in CATEGORICAL]
 
-SCALER = StandardScaler()
+SCALER = StandardScaler()     #MinMaxScaler()   #StandardScaler()
 
 ## To save/load only a fraction of the img files for testing (loading RAM in training)
 TEST_FILES = True
@@ -153,3 +159,7 @@ def load_input_data():
 
 
 ##############################
+
+#########################################################################################
+if __name__ == "__main__":
+    pass

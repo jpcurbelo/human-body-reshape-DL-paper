@@ -109,7 +109,7 @@ class Avatar:
         self.vertices = vertices
 
         if ava_name == None:
-            out_dir = os.path.join(ava_dir, f"model_{self.gender}.obj")
+            out_dir = os.path.join(ava_dir, f"avatar_{self.gender}.obj")
         else:
             out_dir = os.path.join(ava_dir, f"{ava_name}.obj")
 
@@ -326,7 +326,7 @@ class Avatar:
         return normals
 
 
-    def measure(self, save_file=True):
+    def measure(self, save_file=True, out_meas_name=None):
         """Extract measurements from the 3D avatar
         Args:
             self
@@ -353,9 +353,13 @@ class Avatar:
 
 
         if save_file == True:
-            ## Create output file
-            meas_dir = os.path.join(OUTPUT_FILES_DIR, f"output_data_avatar_{self.gender}.csv")
             
+            if out_meas_name == None:
+                meas_dir = os.path.join(OUTPUT_FILES_DIR, f"output_data_avatar_{self.gender}.csv")
+            else:
+                meas_dir = os.path.join(OUTPUT_FILES_DIR, f"{out_meas_name}.csv")
+            
+            ## Create output file
             with open(meas_dir, "w") as file:
 
                 file.write(

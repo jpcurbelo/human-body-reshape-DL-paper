@@ -39,14 +39,14 @@ SIL_FILES_DIR_npy = os.path.join(DS_DIR , f"silhouettes_blender{IMG_SIZE_4NN}_np
 ## Load scaler
 if TEST_FILES == True:
     if isinstance(SCALER, StandardScaler):
-        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, f"scalerStd_{TEST_FILES_NUM}test.pkl")
+        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, f"scalerStd_{TEST_FILES_NUM}_extractor_test.pkl")
     else:
-        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, f"scalerMinMax_{TEST_FILES_NUM}test.pkl")
+        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, f"scalerMinMax_{TEST_FILES_NUM}_extractor_test.pkl")
 else:
     if isinstance(SCALER, StandardScaler):
-        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, "scalerStd.pkl")
+        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, "scalerStd_extractor.pkl")
     else:
-        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, "scalerMinMax.pkl")
+        TOT_SCALER_DIR = os.path.join(MODEL_FILES_DIR, "scalerMinMax_extractor.pkl")
 
 def main():
 
@@ -177,7 +177,7 @@ def main():
     )
 
     if TEST_FILES == True:
-        EPOCHS = 10
+        EPOCHS = 20
     else:
         EPOCHS = 500
 

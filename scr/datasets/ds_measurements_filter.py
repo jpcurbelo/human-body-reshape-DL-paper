@@ -77,7 +77,6 @@ def generateANSURfiles():
             df.to_csv(file_path, index=False)
             
             
-
 def load_ds(ds, gender):
 
     ds_dir = os.path.join(DS_ANSUR_DIR, f"{ds}_{gender}.csv")

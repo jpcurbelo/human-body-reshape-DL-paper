@@ -3,6 +3,7 @@ data/**/*.npy
 data/**/*.npz
 data/**/*.pkl
 data/**/*.keras
+data/**/*.h5
 # data/**/*.obj
 
 data/obj_files/obj_database_*/**/*.obj
