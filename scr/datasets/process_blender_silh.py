@@ -37,8 +37,8 @@ def main():
         # process_silhouettes(ds_name, blender_files_dir)
 
         # UNCOMMENT TO CREATE THE NPZ FILES!!!
-        # ## Save images to npz arrays
-        # imgs2npz(ds_name)
+        ## Save images to npz arrays
+        imgs2npz(ds_name)
 
         # # ## Prepare csv files with measurements info
         # # prepare_measDB_files(ds_name)
@@ -160,17 +160,16 @@ def imgs2npz(ds_name):
 
     imgs_view_dir = list()
 
-    imgs_view_dir.append(os.path.join(silhoDB_src, GENDERS[0]))
-    imgs_view_dir.append(os.path.join(silhoDB_src, GENDERS[1]))
 
-    for folder in imgs_view_dir:
+    # imgs_view_dir.append(os.path.join(silhoDB_src, GENDERS[0]))
+    # imgs_view_dir.append(os.path.join(silhoDB_src, GENDERS[1]))
 
-        img_data = load_imgs(folder)
+    for gender in GENDERS:
 
-        aux_folder_list = folder.split(os.path.sep)
+        img_dir = os.path.join(silhoDB_src,gender)
+        img_data = load_imgs(img_dir)
 
-        npz_file_name = f"silh_Xarray{IMG_SIZE_4NN}_{ds_name}_bw.npz"
-
+        npz_file_name = f"silh_Xarray{IMG_SIZE_4NN}_{ds_name}_{gender}_bw.npz"
         np.savez_compressed(os.path.join(npz_files_dir, npz_file_name), img_data)
 
 

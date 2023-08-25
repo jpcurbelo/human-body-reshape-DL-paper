@@ -10,11 +10,12 @@ OBJ_FILES_ANSURII = os.path.join(OBJ_FILES_DIR, "obj_database_ANSURII")
 
 GENDERS = ["female", "male"]
 DATASETS = ['ANSURI', 'ANSURII']
+DBNAMES = ['SPRING'] + DATASETS
 VIEWS = ['front', 'side']
 
 OBJ_FILES_DS_DIR_DICT = {
     name: os.path.join(OBJ_FILES_DIR, f"obj_database_{name}")
-    for name in ['SPRING'] + DATASETS
+    for name in DBNAMES
 }
 
 OUTPUT_FILES_DIR = os.path.join("../../data", "output_files")
@@ -100,6 +101,31 @@ SIL_FILES_DIR_DICT = {
     for name in OBJ_FILES_DS_DIR_DICT.keys()
 }
 
+
+##Extractor##
+KN_MEAS = [
+    "gender",
+    'weight_kg', 
+    'stature_cm', 
+]
+
+UK_MEAS = [
+    'chest_girth',
+    'waist_girth',
+    'hips_buttock_girth',
+    'thigh_girth',
+    'sleeveoutseam_length',
+    'waistback_length',
+    'crotchheight_length',
+]
+
+CATEGORICAL = ["gender"]
+GENDER_DICT = {"female": 0, "male": 1}
+CONTINUOUS = [x for x in KN_MEAS if x not in CATEGORICAL]
+
+SCALER = StandardScaler()
+
+##################################
 
 def load_input_data():
     '''
