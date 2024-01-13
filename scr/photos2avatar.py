@@ -36,16 +36,17 @@ from utils import (
     M_NUM,
 )
 
-# Add the parent directory to sys.path
+# Add the parent directory to sys.path so we can use absolute imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
-# Now one can use absolute imports
+
+# Import Avatar class containing the 3D avatar generation methods (Reshaper and Imputer modules)
 from reshaper.avatar import Avatar
 
 # Constants
 IMG_RESIZE = 448  # 512   #512   # 256   #1024
-MODEL_NAME = "extractor_stdScl_img224_inp2_out8_ep175_paper.h5"   # Previously trained - extractor
+MODEL_NAME = "extractor_stdScl_img224_inp2_out8_ep175_paper.h5"   # Previously trained - Extractor module
 NUM_AUG_INPUT = 20
 
 #########################################################################################
