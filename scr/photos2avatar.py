@@ -1,111 +1,81 @@
+# Extracts the silhouettes from input images (front and side views) and creates the avatar (obj file)
+
+import os
 import sys
 import time
+import random
+import logging
 
 import pandas as pd
-import joblib
 import numpy as np
+import matplotlib.pyplot as plt
 import keras
-from sklearn.model_selection import train_test_split
 import cv2 as cv
 import PIL
 import torch
-import torchvision
+# import torchvision
 from torchvision import transforms
-import matplotlib.pyplot as plt
 from skimage import filters
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import random
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import joblib
 
-from utils import *
+from utils import ( 
+    INPUT_FILES_DIR,
+    FILE_ENCODING,
+    DS_DIR,
+    SCALER,
+    MODEL_FILES_DIR,
+    CONTINUOUS,
+    GENDER_DICT,
+    VIEWS,
+    OUTPUT_FILES_DIR,
+    IMG_SIZE_4NN,
+    UK_MEAS,
+    M_NUM,
+)
 
 # Add the parent directory to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
-# Now you can use absolute imports
+# Now one can use absolute imports
 from reshaper.avatar import Avatar
 
-
-## Global variables
+# Constants
 IMG_RESIZE = 448  # 512   #512   # 256   #1024
-
-MODEL_NAME = "extractor_stdScl_img224_inp2_out8_ep175_paper.h5"
+MODEL_NAME = "extractor_stdScl_img224_inp2_out8_ep175_paper.h5"   # Previously trained - extractor
 NUM_AUG_INPUT = 20
 
-def main():
-    """
-    Main function to define all the steps from the photos to generating the 3D avatar.
-    """
-
-    ## Read the input data
+#########################################################################################
+def load_model(model_name):
+    '''
+    Loads a previously trained model.
+    '''
     try:
-        ## Try to access the data
-        input_info, input_images, df_total = get_input_data()
-
-        ## Extract the silhouettes from the input images
-        sil_images = extract_silhouette(input_images)
-
-    except Exception as e:
-        print("Please, check the input files.")
-        sys.exit()
-
-    else:
-
-        model_name = MODEL_NAME
-        model = keras.models.load_model(os.path.join(MODEL_FILES_DIR, model_name))
-
-        try:
-            extracted_measurements = measurements_from_sil(
-                model,
-                ## Only take the gender+stature as input - not weight
-                input_info, 
-                sil_images,
-                df_total,
-                model_name=model_name,
-                gender=input_gender_glob,
-                stature=stature,
-            )
-
-        except ValueError:
-            print(
-                "Please, check the silhouettes images size - it must be 224x224 px (IMG_SIZE_4NN in utils.py). Check input_info."
-            )
-            sys.exit()
-
-        else:
-
-            print("[3] Starting to create the 3D avatar.")
-            start = time.time()
-
-            measurements = np.zeros(M_NUM).transpose()
-
-            ## Assign measurements from 9 to 21-sized array
-            measurements[0]  = weightkg   # 'weight' To be used in case the user has informed the weight
-            measurements[1]  = extracted_measurements[0]   # 'stature'
-            measurements[3]  = extracted_measurements[1]   # 'chestcircumference'
-            measurements[4]  = extracted_measurements[2]   # 'waistcircumference'
-            measurements[5]  = extracted_measurements[3]   # 'buttockcircumference'
-            measurements[7]  = extracted_measurements[4]   # 'thighcircumference'
-            measurements[14] = extracted_measurements[5]   # 'sleeveoutseam'
-            measurements[17] = extracted_measurements[6]   # 'waistbacklength'
-            measurements[6]  = extracted_measurements[7]   # 'shouldercircumference'
-            measurements[16] = extracted_measurements[8]   # 'crotchheight'
-
-            ## Predictions - Real Photos
-            body = Avatar(measurements, input_gender_glob)
-            input_meas21 = body.predict()
-
-            ## Create 3D avatar
-            body.create_obj_file(ava_name=f'avatar_{input_gender_glob}_fromImg')
-
-            ## Extract measurements from the 3D avatar
-            output_meas21 = body.measure(out_meas_name=f"output_data_avatar_{input_gender_glob}_fromImg")
-
-            print(
-                "[3] Finished creating the 3D avatar in {:.1f} s".format(
-                    time.time() - start
-                )
-            )
+        return keras.models.load_model(os.path.join(MODEL_FILES_DIR, model_name))
+    except FileNotFoundError as file_error:
+        print(f"Error: File not found - {file_error.filename}")
+        sys.exit(1)
+        
+def create_measurements_array(extracted_measurements, weightkg):
+    '''
+    Creates an array with the measurements to be used in the 3D avatar.
+    '''
+    measurements = np.zeros(M_NUM).transpose()
+    measurements[0] = weightkg
+    measurements[1] = extracted_measurements[0]
+    measurements[3] = extracted_measurements[1]
+    measurements[4] = extracted_measurements[2]
+    measurements[5] = extracted_measurements[3]
+    measurements[7] = extracted_measurements[4]
+    measurements[14] = extracted_measurements[5]
+    measurements[17] = extracted_measurements[6]
+    measurements[6] = extracted_measurements[7]
+    measurements[16] = extracted_measurements[8]
+    
+    return measurements
 
 def get_input_data():
     """Reads and processes input data.
@@ -130,13 +100,8 @@ def get_input_data():
     ## Read and process the input images
     input_images = load_input_images()
 
-    print(
-        "[1] Finished loading input data (2 photos and basic info) in {:.1f} s".format(
-            time.time() - start
-        )
-    )
+    print(f"[1] Finished loading input data (2 photos and basic info) in ({(time.time() - start):.1f} s")
     return basic_info, input_images, df_total
-
 
 def import_basic_info():
     """Imports input data (gender, height, weight)
@@ -178,11 +143,24 @@ def import_basic_info():
             tot_db_dir, encoding=FILE_ENCODING, converters={"ID": str}
         )
 
-    except:
+    except FileNotFoundError:
         # The file does not exist, so we need to handle the exception
-        print(
-            f"Wrong file or file path --> '{tot_db_dir}' file not found. Try filtering the DS with ds_measurements_filter.py"
-        )
+        print(f"Error: File not found - '{tot_db_dir}'. Please check the file path.")
+        print("Tip: You may want to run ds_measurements_filter.py to filter the dataset.")
+        # Optionally, you can raise the exception again to propagate it up the call stack
+        raise
+
+    except pd.errors.EmptyDataError:
+        # Handle the case where the file exists but is empty
+        print(f"Error: The file '{tot_db_dir}' is empty. Please check the file content.")
+
+    except pd.errors.ParserError as parse_error:
+        # Handle parsing errors (e.g., malformed CSV)
+        print(f"Error: Unable to parse '{tot_db_dir}'. Reason: {parse_error}")
+
+    except Exception as e:
+        # Catch other unexpected errors
+        print(f"Unexpected error: {e}")
 
 
     ## Load scaler
@@ -193,16 +171,22 @@ def import_basic_info():
 
     try:
         # Open the file for reading
-        dataMeasX_scaler = joblib.load(tot_scaler_dir)
+        data_measX_scaler = joblib.load(tot_scaler_dir)
 
-    except:
-        # The file does not exist, so we need to handle the exception
-        dataMeasX_scaler = None
+    except FileNotFoundError:
+        # The file does not exist
+        logging.error(f"Error: Scaler file not found - '{tot_scaler_dir}'. Please check the file path.")
+        data_measX_scaler = None
 
-    if dataMeasX_scaler is None:
+    except (joblib.exc.JoblibValueError, Exception) as e:
+        # Handle other potential errors during loading
+        logging.error(f"Error loading scaler file '{tot_scaler_dir}': {e}")
+        data_measX_scaler = None
+
+    if data_measX_scaler is None:
         ## Scales the data using the train/test split
-        dataMeasX_scaler = scale_db_values()
-        joblib.dump(dataMeasX_scaler, tot_scaler_dir)
+        data_measX_scaler = scale_db_values()
+        joblib.dump(data_measX_scaler, tot_scaler_dir)
 
 
     ###Save global variables not scaled
@@ -212,16 +196,15 @@ def import_basic_info():
     global weightkg
     weightkg = input_df.iloc[0]["weight_kg"]
 
-    aux_df = dataMeasX_scaler.transform(input_df[CONTINUOUS])   
+    aux_df = data_measX_scaler.transform(input_df[CONTINUOUS])
 
     gender_aux = np.array(input_df["gender"])
     gender_aux = gender_aux.reshape(gender_aux.shape[0], -1)
     gender_cat = keras.utils.to_categorical(gender_aux, len(GENDER_DICT.keys()))
 
-    inputDataX = np.hstack([gender_cat, aux_df])
+    input_dataX = np.hstack([gender_cat, aux_df])
 
-    return inputDataX, df_total 
-
+    return input_dataX, df_total
 
 def scale_db_values():
     """
@@ -233,11 +216,9 @@ def scale_db_values():
     Returns:
         StandardScaler: The fitted StandardScaler instance used for scaling.
     """
-    from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import StandardScaler
-
-    tot_db_dir_fem = os.path.join(DS_DIR, f"measurements_TOTAL_female.csv")
-    tot_db_dir_mal = os.path.join(DS_DIR, f"measurements_TOTAL_male.csv")
+    
+    tot_db_dir_fem = os.path.join(DS_DIR, "measurements_TOTAL_female.csv")
+    tot_db_dir_mal = os.path.join(DS_DIR, "measurements_TOTAL_male.csv")
 
     # Open the file for reading
     df_fem = pd.read_csv(
@@ -249,16 +230,15 @@ def scale_db_values():
     df = pd.concat([df_fem, df_mal], ignore_index=True)
 
     # Split data into train and test sets
-    (trainData, testData) = train_test_split(
+    (train_data, _) = train_test_split(
         df, train_size=0.8, shuffle=True, random_state=123
     )
 
     # Create and fit the scaler
     scaler = StandardScaler()
-    scaler.fit(trainData[CONTINUOUS]) 
+    scaler.fit(train_data[CONTINUOUS])
 
     return scaler
-
 
 def load_input_images():
     """Imports input images (front and side views) and reduces them if needed.
@@ -280,9 +260,9 @@ def load_input_images():
 
         ## Resize image
         if img.shape[0] > 2048:
-            SCL = 2048 / img.shape[0]
-            width = int(img.shape[1] * SCL)
-            height = int(img.shape[0] * SCL)
+            scale_factor = 2048 / img.shape[0]
+            width = int(img.shape[1] * scale_factor)
+            height = int(img.shape[0] * scale_factor)
             dim = (width, height)
             resized = cv.resize(img, dim)
         else:
@@ -293,7 +273,6 @@ def load_input_images():
         img_list.append(PIL.Image.fromarray(np.uint8(resized)))
 
     return img_list
-
 
 def extract_silhouette(input_images):
     """Extracts the silhouettes from input images (front and side views)
@@ -327,7 +306,6 @@ def extract_silhouette(input_images):
         ]
     )
 
-
     for vi, img in enumerate(input_images):
 
         view = VIEWS[vi]
@@ -343,7 +321,7 @@ def extract_silhouette(input_images):
             ## Preprocess the input image
             input_tensor = preprocess(img)
             # create a mini-batch as expected by the model
-            input_batch = input_tensor.unsqueeze(0)  
+            input_batch = input_tensor.unsqueeze(0)
 
             ## Move the input and model to GPU for speed if available
             if torch.cuda.is_available():
@@ -357,7 +335,7 @@ def extract_silhouette(input_images):
 
             ## Create a color pallette, selecting a color for each class
             palette = torch.tensor([255, 255, 255])
-            colors = torch.as_tensor([i for i in range(1, -1, -1)])[:, None] * palette
+            colors = torch.as_tensor(list(range(1, -1, -1)))[:, None] * palette
             colors = (colors).numpy().astype("uint8")
 
             fig = plt.figure()
@@ -412,21 +390,25 @@ def extract_silhouette(input_images):
         # sil_images.append(np.array(sil).astype(float) / 255)
         sil_images.append(sil)
 
-        print("** Finished {} view in {:.1f} s".format(view, time.time() - start_view))
+        print(f"-- Finished {view} view in {(time.time() - start_view):.1f} s")
 
-    print(
-        "[2] Finished extracting the silhouettes from input images (front and side views) in {:.1f} s".format(
-            time.time() - start
-        )
+    print(f"[2] Finished extracting the silhouettes from input images (front and side) in {(time.time() - start):.1f} s"
     )
     return sil_images
-
 
 def remove_transparency(im, bg_colour=(255, 255, 255)):
     """
     # https://stackoverflow.com/questions/44997339/convert-python-image-to-single-channel-from-rgb-using-pil-or-scipy
-    """
+    Remove transparency from an image by filling transparent parts with a specified background color.
 
+    Args:
+        im (PIL.Image.Image): The input image.
+        bg_colour (tuple): The RGB color of the background.
+
+    Returns:
+        PIL.Image.Image: The image with transparency removed.
+    """
+    
     # Only process if image has transparency
     if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
 
@@ -437,110 +419,158 @@ def remove_transparency(im, bg_colour=(255, 255, 255)):
         # Must be RGBA because paste requires both images have the same format
         bg = PIL.Image.new("RGBA", im.size, bg_colour + (255,))
         bg.paste(im, mask=alpha)
+    
         return bg
-
-    else:
-        return im
-
+    
+    return im
 
 def measurements_from_sil(
     model,
-    inputDataX,
+    input_dataX,
     img_input,
     df,
-    model_name="extractor_stdScl_img224_inp2_out8_ep175_paper.h5",
-    gender="female",
-    stature=170,
+    stature_cm,
+    # model_name=MODEL_NAME,
+    # gender="female",
 ):
     """Extracts 8 measurements from the silhouettes from input images (front and side views)
 
     Args:
-        inputDataX (np array): 'gender', 'height', and 'weight' values (encoded and scaled)
+        model (keras model): CNN-MLP model
+        input_dataX (np array): 'gender', 'height', and 'weight' values (encoded and scaled)
         img_input (list of np arrays): front and side view silhouette images
         df (DataFrame): data from SPRING, ANSUR I and II.
+        stature_cm (int): stature in cm
 
     Returns:
         extracted_measurements: a np array with 8 measurements (to complete LIST_10_MEAS)
     """
 
     ## CNN-MLP prediction
-    input_imgFront = np.array(img_input[0]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
-    input_imgSide = np.array(img_input[1]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
+    input_img_front = np.array(img_input[0]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
+    input_img_side = np.array(img_input[1]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
 
     ## Prediction (data augmentation)
     # https://stackoverflow.com/questions/57092637/how-to-fit-keras-imagedatagenerator-for-large-data-sets-using-batches
     # https://stackoverflow.com/questions/49404993/how-to-use-fit-generator-with-multiple-inputs
 
     # we create two instances with the same arguments
-    data_gen_argsInput = dict(
-        featurewise_center=True,
-        featurewise_std_normalization=True,
-        # width_shift_range=0.1,
-        # height_shift_range=0.25,
-        # shear_range=3,
-        # # zoom_range=[0.8, 1.2],
-        # horizontal_flip=False,
-        zoom_range=[0.8, 1.2],
+    data_gen_args_input = dict(
+        featurewise_center = True,
+        featurewise_std_normalization = True,
+        # width_shift_range = 0.1,
+        # height_shift_range = 0.25,
+        # shear_range = 3,
+        # # zoom_range = [0.8, 1.2],
+        # horizontal_flip = False,
+        zoom_range = [0.8, 1.2],
     )
 
     ## compute quantities required for featurewise normalization
     ## (std, mean, and principal components if ZCA whitening is applied)
-    datagenInput = ImageDataGenerator(**data_gen_argsInput)
+    datagen_input = ImageDataGenerator(**data_gen_args_input)
 
-    datagenInput.fit(input_imgFront, augment=True)
+    datagen_input.fit(input_img_front, augment=True)
 
     ### Test-Time Augmentation to Make Predictions
-    predsInputAugSUM = np.zeros((1, len(UK_MEAS)))
-    predsInputAugALL = np.zeros((1, len(UK_MEAS)))
+    # preds_input_aug_all = np.zeros((1, len(UK_MEAS)))
+    preds_input_aug_all = np.zeros((1, len(UK_MEAS)))
 
     # Initialize arrays to accumulate augmented images
-    input_imgFront_aug_accum = []
-    input_imgSide_aug_accum = []
+    input_img_front_aug_accum = []
+    input_img_side_aug_accum = []
 
     # Generate augmented images and accumulate
     for _ in range(NUM_AUG_INPUT):
-        batch_imgFront_aug = datagenInput.flow(
-            input_imgFront,
+        batch_img_front_aug = datagen_input.flow(
+            input_img_front,
             batch_size=1,
             shuffle=False,
             seed=random.randint(0, 100),
         ).next()[0]
-        input_imgFront_aug_accum.append(batch_imgFront_aug)
         
-        batch_imgSide_aug = datagenInput.flow(
-            input_imgSide,
+        # Generate augmented images and accumulate
+        input_img_front_aug_accum.append(batch_img_front_aug)
+        batch_img_side_aug = datagen_input.flow(
+            input_img_side,
             batch_size=1,
             shuffle=False,
             seed=random.randint(0, 100),
         ).next()[0]
-        input_imgSide_aug_accum.append(batch_imgSide_aug)
+        input_img_side_aug_accum.append(batch_img_side_aug)
 
     # Stack the accumulated images into arrays
-    input_imgFront_aug = np.stack(input_imgFront_aug_accum)
-    input_imgSide_aug = np.stack(input_imgSide_aug_accum)
+    input_img_front_aug = np.stack(input_img_front_aug_accum)
+    input_img_side_aug = np.stack(input_img_side_aug_accum)
 
-    # Repeat inputDataX along the first axis to match the shape of input_imgFront_aug
-    repeated_inputDataX = np.repeat(inputDataX, input_imgFront_aug.shape[0], axis=0)
+    # Repeat input_dataX along the first axis to match the shape of input_img_front_aug
+    repeated_input_dataX = np.repeat(input_dataX, input_img_front_aug.shape[0], axis=0)
 
-    predsInputAugALL = model.predict(
-            [repeated_inputDataX, input_imgFront_aug, input_imgSide_aug], verbose=0
+    preds_input_aug_all = model.predict(
+            [repeated_input_dataX, input_img_front_aug, input_img_side_aug], verbose=0
     )
 
     # Apply scaling
     mean_values = df[UK_MEAS].mean()
     std_values = df[UK_MEAS].std()
 
-    predsInputScaled = predsInputAugALL * std_values.values + mean_values.values
+    preds_input_scaled = preds_input_aug_all * std_values.values + mean_values.values
 
     # Compute final prediction
-    predsInput = np.round(np.mean(predsInputScaled, axis=0), 2)
+    preds_input = np.round(np.mean(preds_input_scaled, axis=0), 2)
 
     ## Join info and extracted measurements (to complete 9 measurements) - Not included weight
-    input9meas = np.hstack([np.array(stature), predsInput])
+    input9meas = np.hstack([np.array(stature_cm), preds_input])
 
     return input9meas
+
+def main():
+    """
+    Main function to define all the steps from the photos to generating the 3D avatar.
+    """
+
+    try:
+        input_info, input_images, df_total = get_input_data()
+        sil_images = extract_silhouette(input_images)
+    except (FileNotFoundError, IOError) as error:
+        print(f"Error: {error}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        sys.exit(1)
+
+    try:
+        model = load_model(MODEL_NAME)
+    except FileNotFoundError as file_error:
+        print(f"Error: {file_error}")
+        sys.exit(1)
+
+    try:
+        extracted_measurements = measurements_from_sil(
+            model,
+            input_info,
+            sil_images,
+            df_total,
+            stature,
+        )
+    except ValueError:
+        print("Please, check the silhouettes images size - it must be 224x224 px (IMG_SIZE_4NN in utils.py). Check input_info.")
+        sys.exit()
+
+    print("[3] Starting to create the 3D avatar.")
+    start = time.time()
+
+    measurements = create_measurements_array(extracted_measurements, weightkg)
+
+    body = Avatar(measurements, input_gender_glob)
+    _ = body.predict()
+    body.create_obj_file(ava_name=f'avatar_{input_gender_glob}_fromImg')
+    _ = body.measure(out_meas_name=f"output_data_avatar_{input_gender_glob}_fromImg")
+
+    print(f"[3] Finished creating the 3D avatar in {(time.time() - start):.1f} s")
 
 #########################################################################################
 if __name__ == "__main__":
 
     main()
+    

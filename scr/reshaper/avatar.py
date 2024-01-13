@@ -88,7 +88,6 @@ class Avatar:
 
             return self.imputed_data
         
-
     def create_obj_file(self, ava_dir=OUTPUT_FILES_DIR, ava_name=None):
         """Creates a wavefront.obj file from the measurements (input) and data from training.
         First, updates [vertices, normals, facets] by mapping the input data with the rfe_matrices
@@ -152,7 +151,6 @@ class Avatar:
                         )
                     )
 
-
     def mapping_rfemat(self):
         """Local mapping using measurements + rfe_mat
 
@@ -197,7 +195,6 @@ class Avatar:
 
         return vertices
     
-
     def d_synthesize(self, deform):
         """Synthesizes a body by deform-based, given deform, output vertices
 
@@ -234,7 +231,6 @@ class Avatar:
         x -= x_mean
 
         return x  # 10 * x
-
 
     def rotate_vertices(self, vertices):
         """Rotates all the 'synthesized' vertices in the SPRING database - for the specific gender
@@ -284,7 +280,6 @@ class Avatar:
 
         return rotated_vec
 
-
     def compute_normals(self, vertices, facets):
         """Computes the normals on the 3D body surface
 
@@ -324,7 +319,6 @@ class Avatar:
             normals.append(normal.tolist())
 
         return normals
-
 
     def measure(self, save_file=True, out_meas_name=None):
         """Extract measurements from the 3D avatar
@@ -406,7 +400,6 @@ class Avatar:
 
         return self.output_data
 
-
     def calc_measurements(self, cp, facet):
         """Calculates measurement data from given vertices by control points
         Returns an array of M_NUM measurements
@@ -437,7 +430,6 @@ class Avatar:
             measurement_list.append(length * 100)  # meters to cm
 
         return np.array(measurement_list, dtype=np.float64)
-
 
     def calc_length(self, lab, cplist, meas):
         """ """
