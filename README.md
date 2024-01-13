@@ -106,6 +106,10 @@ Input files are to be located in `data/input_files` and consist of:
 
 Output files are to be stored in `data/output_files` and may consist of silhouette images extracted and the *wavefront.obj* file for the avatar.
 
+## Data files
+
+To train and use the models, you will need the dataset files for avatars, silhouettes, and body measurements. These files can be downloaded from [Zenodo](https://zenodo.org/records/8309972). Make sure to organize the downloaded files following the folder tree presented above.
+
 ## Generating Avatars from Images
 
 To try the code, navigate to `src` and run:
