@@ -1,5 +1,5 @@
 # Specify file types and their language
 *.md    markdown
 *.py    python
-*.ipynb jupyter-notebook
+*.ipynb python
 
