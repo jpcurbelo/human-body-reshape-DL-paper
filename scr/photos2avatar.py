@@ -13,7 +13,6 @@ import keras
 import cv2 as cv
 import PIL
 import torch
-# import torchvision
 from torchvision import transforms
 from skimage import filters
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -112,8 +111,6 @@ def import_basic_info():
         No arguments
 
     Returns:
-        ###basic_info: a tupple with 'gender', 'height', and 'weight' values
-        ###basic_info: a DataFrame with 'gender', 'height', and 'weight' values
         basic_info: a np array with 'gender', 'height', and 'weight' values (encoded and scaled)
         df_total: a DataFrame containing the data from SPRING, ANSUR I and II.
     """
@@ -464,7 +461,7 @@ def measurements_from_sil(
         # width_shift_range = 0.1,
         # height_shift_range = 0.25,
         # shear_range = 3,
-        # # zoom_range = [0.8, 1.2],
+        # zoom_range = [0.8, 1.2],
         # horizontal_flip = False,
         zoom_range = [0.8, 1.2],
     )
@@ -476,7 +473,6 @@ def measurements_from_sil(
     datagen_input.fit(input_img_front, augment=True)
 
     ### Test-Time Augmentation to Make Predictions
-    # preds_input_aug_all = np.zeros((1, len(UK_MEAS)))
     preds_input_aug_all = np.zeros((1, len(UK_MEAS)))
 
     # Initialize arrays to accumulate augmented images
@@ -558,7 +554,7 @@ def main():
         )
     except ValueError:
         print("Please, check the silhouettes images size - it must be 224x224 px (IMG_SIZE_4NN in utils.py). Check input_info.")
-        sys.exit()
+        sys.exit(1)
 
     print("[3] Starting to create the 3D avatar.")
     start = time.time()
