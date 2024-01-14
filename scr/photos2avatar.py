@@ -60,12 +60,13 @@ def load_model(model_name):
         print(f"Error: File not found - {file_error.filename}")
         sys.exit(1)
         
-def create_measurements_array(extracted_measurements, weightkg):
+def create_measurements_array(extracted_measurements, weightkg_glob):
     '''
     Creates an array with the measurements to be used in the 3D avatar.
+    The indexes in the array are to match the measurements indexes in utils.MEASUREMENTS
     '''
     measurements = np.zeros(M_NUM).transpose()
-    measurements[0] = weightkg
+    measurements[0] = weightkg_glob
     measurements[1] = extracted_measurements[0]
     measurements[3] = extracted_measurements[1]
     measurements[4] = extracted_measurements[2]
@@ -191,18 +192,21 @@ def import_basic_info():
 
 
     ###Save global variables not scaled
-    global stature
-    stature = input_df.iloc[0]["stature_cm"]
+    global stature_glob
+    stature_glob = input_df.iloc[0]["stature_cm"]
 
-    global weightkg
-    weightkg = input_df.iloc[0]["weight_kg"]
+    global weightkg_glob
+    weightkg_glob = input_df.iloc[0]["weight_kg"]
 
+    # Scale the continuous values in the DF
     aux_df = data_measX_scaler.transform(input_df[CONTINUOUS])
 
+    # Encode the categorical values in the DF
     gender_aux = np.array(input_df["gender"])
     gender_aux = gender_aux.reshape(gender_aux.shape[0], -1)
     gender_cat = keras.utils.to_categorical(gender_aux, len(GENDER_DICT.keys()))
 
+    # Join the categorical and continuous values to be used as input data
     input_dataX = np.hstack([gender_cat, aux_df])
 
     return input_dataX, df_total
@@ -431,8 +435,6 @@ def measurements_from_sil(
     img_input,
     df,
     stature_cm,
-    # model_name=MODEL_NAME,
-    # gender="female",
 ):
     """Extracts 8 measurements from the silhouettes from input images (front and side views)
 
@@ -552,7 +554,7 @@ def main():
             input_info,
             sil_images,
             df_total,
-            stature,
+            stature_glob,
         )
     except ValueError:
         print("Please, check the silhouettes images size - it must be 224x224 px (IMG_SIZE_4NN in utils.py). Check input_info.")
@@ -561,12 +563,15 @@ def main():
     print("[3] Starting to create the 3D avatar.")
     start = time.time()
 
-    measurements = create_measurements_array(extracted_measurements, weightkg)
+    measurements = create_measurements_array(extracted_measurements, weightkg_glob)
 
-    body = Avatar(measurements, input_gender_glob)
-    _ = body.predict()
-    body.create_obj_file(ava_name=f'avatar_{input_gender_glob}_fromImg')
-    _ = body.measure(out_meas_name=f"output_data_avatar_{input_gender_glob}_fromImg")
+    avatar = Avatar(measurements, input_gender_glob)
+    # Impute missing measurements
+    _ = avatar.predict()
+    # Create the 3D avatar
+    avatar.create_obj_file(ava_name=f'avatar_{input_gender_glob}_fromImg')
+    # Measure the 3D avatar (to compare with the input measurements)
+    _ = avatar.measure(out_meas_name=f"output_data_avatar_{input_gender_glob}_fromImg")
 
     print(f"[3] Finished creating the 3D avatar in {(time.time() - start):.1f} s")
 
