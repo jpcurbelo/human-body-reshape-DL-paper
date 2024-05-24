@@ -20,6 +20,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
 
+# Check if any GPUs are available
+import tensorflow as tf
+gpus = tf.config.list_physical_devices('GPU')
+if not gpus:
+    # No GPUs available, force TensorFlow to use CPU only
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 from utils import ( 
     INPUT_FILES_DIR,
     FILE_ENCODING,
@@ -44,8 +51,8 @@ sys.path.append(parent_dir)
 from reshaper.avatar import Avatar
 
 # Constants
-IMG_RESIZE = 448  # 512   #512   # 256   #1024
-MODEL_NAME = "extractor_stdScl_img224_inp2_out8_ep175_paper.h5"   # Previously trained - Extractor module
+IMG_RESIZE = 448  # 512   #512   # 256
+MODEL_NAME = "extractor_nn_model.h5"
 NUM_AUG_INPUT = 20
 
 #########################################################################################
@@ -101,7 +108,7 @@ def get_input_data():
     ## Read and process the input images
     input_images = load_input_images()
 
-    print(f"[1] Finished loading input data (2 photos and basic info) in ({(time.time() - start):.1f} s")
+    print(f"[1] Finished loading input data (2 photos and basic info) in {(time.time() - start):.1f} s")
     return basic_info, input_images, df_total
 
 def import_basic_info():
@@ -186,7 +193,6 @@ def import_basic_info():
         ## Scales the data using the train/test split
         data_measX_scaler = scale_db_values()
         joblib.dump(data_measX_scaler, tot_scaler_dir)
-
 
     ###Save global variables not scaled
     global stature_glob
@@ -450,6 +456,10 @@ def measurements_from_sil(
     input_img_front = np.array(img_input[0]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
     input_img_side = np.array(img_input[1]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
 
+    print("heyyyyyyyyyyyyyyyyyyyyy")
+    print(input_img_front.shape)
+    print(input_img_side.shape)
+
     ## Prediction (data augmentation)
     # https://stackoverflow.com/questions/57092637/how-to-fit-keras-imagedatagenerator-for-large-data-sets-using-batches
     # https://stackoverflow.com/questions/49404993/how-to-use-fit-generator-with-multiple-inputs
@@ -505,9 +515,13 @@ def measurements_from_sil(
     # Repeat input_dataX along the first axis to match the shape of input_img_front_aug
     repeated_input_dataX = np.repeat(input_dataX, input_img_front_aug.shape[0], axis=0)
 
-    preds_input_aug_all = model.predict(
-            [repeated_input_dataX, input_img_front_aug, input_img_side_aug], verbose=0
-    )
+    try:
+        preds_input_aug_all = model.predict(
+                [repeated_input_dataX, input_img_front_aug, input_img_side_aug], verbose=0
+        )
+    except ValueError:
+        print("Please, make sure the model file you are using is the correct one - double check the model architecture and the input data.")
+        sys.exit(1)
 
     # Apply scaling
     mean_values = df[UK_MEAS].mean()
@@ -520,6 +534,8 @@ def measurements_from_sil(
 
     ## Join info and extracted measurements (to complete 9 measurements) - Not included weight
     input9meas = np.hstack([np.array(stature_cm), preds_input])
+
+    print('input9meas', input9meas.shape)
 
     return input9meas
 
@@ -539,7 +555,13 @@ def main():
         sys.exit(1)
 
     try:
+        print("[3] Loading the previously trained extractor model.")
+        start = time.time()
         model = load_model(MODEL_NAME)
+
+        print(f"Model summary: {model.summary()}")
+
+        print(f"[3] Finished loading the previously trained extractor model in {(time.time() - start):.1f} s")
     except FileNotFoundError as file_error:
         print(f"Error: {file_error}")
         sys.exit(1)
@@ -556,7 +578,7 @@ def main():
         print("Please, check the silhouettes images size - it must be 224x224 px (IMG_SIZE_4NN in utils.py). Check input_info.")
         sys.exit(1)
 
-    print("[3] Starting to create the 3D avatar.")
+    print("[4] Starting to create the 3D avatar.")
     start = time.time()
 
     measurements = create_measurements_array(extracted_measurements, weightkg_glob)
@@ -569,7 +591,7 @@ def main():
     # Measure the 3D avatar (to compare with the input measurements)
     _ = avatar.measure(out_meas_name=f"output_data_avatar_{input_gender_glob}_fromImg")
 
-    print(f"[3] Finished creating the 3D avatar in {(time.time() - start):.1f} s")
+    print(f"[4] Finished creating the 3D avatar in {(time.time() - start):.1f} s")
 
 #########################################################################################
 if __name__ == "__main__":
