@@ -14,6 +14,7 @@ data/**/*.keras
 !data/body_reshaper_files/facets_template_3DHBSh.npy
 !data/body_reshaper_files/measurements_*.npy
 !data/body_reshaper_files/def2vert_*.npz
+!data/body_reshaper_files/cp_*male.pkl
 !data/datasets/*TOTAL*
 
 data/obj_files/obj_database_*/**/*.obj
