@@ -3,14 +3,18 @@ data/**/*.npy
 data/**/*.npz
 data/**/*.pkl
 data/**/*.keras
-data/**/*.h5
+# data/**/*.h5
 # data/**/*.obj
+
+# Except the data directory itself
+!data
+
+# Except for the files to build the 3D models
+!data/body_reshaper_files/rfe*
+!data/datasets/*TOTAL*
 
 data/obj_files/obj_database_*/**/*.obj
 data/datasets/silhouettes_blender*/silhouettes_*/**/**/*.png
-
-# Except the data directory itself
-!data/
 
 # Ignore compiled Python files and cache directories
 __pycache__/*

@@ -456,10 +456,6 @@ def measurements_from_sil(
     input_img_front = np.array(img_input[0]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
     input_img_side = np.array(img_input[1]).reshape(1, IMG_SIZE_4NN, IMG_SIZE_4NN, 1)
 
-    print("heyyyyyyyyyyyyyyyyyyyyy")
-    print(input_img_front.shape)
-    print(input_img_side.shape)
-
     ## Prediction (data augmentation)
     # https://stackoverflow.com/questions/57092637/how-to-fit-keras-imagedatagenerator-for-large-data-sets-using-batches
     # https://stackoverflow.com/questions/49404993/how-to-use-fit-generator-with-multiple-inputs
@@ -535,8 +531,6 @@ def measurements_from_sil(
     ## Join info and extracted measurements (to complete 9 measurements) - Not included weight
     input9meas = np.hstack([np.array(stature_cm), preds_input])
 
-    print('input9meas', input9meas.shape)
-
     return input9meas
 
 def main():
@@ -558,9 +552,6 @@ def main():
         print("[3] Loading the previously trained extractor model.")
         start = time.time()
         model = load_model(MODEL_NAME)
-
-        print(f"Model summary: {model.summary()}")
-
         print(f"[3] Finished loading the previously trained extractor model in {(time.time() - start):.1f} s")
     except FileNotFoundError as file_error:
         print(f"Error: {file_error}")
