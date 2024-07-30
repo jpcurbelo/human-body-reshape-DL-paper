@@ -108,7 +108,7 @@ Output files are to be stored in `data/output_files` and may consist of silhouet
 
 ## Data files
 
-To train and use the models, you will need the dataset files for avatars, silhouettes, and body measurements. These files can be downloaded from [Zenodo](https://zenodo.org/records/8309972). Make sure to organize the downloaded files following the folder tree presented above.
+To train and use the models, you will need the dataset files for avatars, silhouettes, and body measurements. These files can be downloaded from Zenodo: [3D Models and Silhouettes for Human Body Reshape with DL from the ANSUR Dataset (Version v3)](https://zenodo.org/records/11301099). Make sure to organize the downloaded files following the folder tree presented above.
 
 ## Generating Avatars from Images
 
