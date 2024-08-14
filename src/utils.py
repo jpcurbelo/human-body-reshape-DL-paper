@@ -6,7 +6,7 @@ UTILS_DIR = os.path.dirname(os.path.abspath(__file__))
 # Construct paths based on the main folder
 PROJECT_DIR = os.path.join(UTILS_DIR, '..')
 
-SCR_DIR = os.path.join(PROJECT_DIR, 'scr')
+SCR_DIR = os.path.join(PROJECT_DIR, 'src')
 DATA_DIR = os.path.join(PROJECT_DIR, 'data')
 
 CP_FILES_DIR = os.path.join(DATA_DIR, "cp_blender_files")

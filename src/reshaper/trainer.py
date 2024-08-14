@@ -194,10 +194,10 @@ def calculate_weights(cp, vertices, facets, label):
     obj_file_dir = os.path.join(OBJ_FILES_SPRING, label)
     file_list = sorted(os.listdir(obj_file_dir))
     
-    weights_scr = ['Volume', '3DHBSh', 'Aqua-Calc', 'Article 1987']
+    weights_src = ['Volume', '3DHBSh', 'Aqua-Calc', 'Article 1987']
     with open(os.path.join(RESHAPER_FILES_DIR, f"weights_{label}.csv"), 'w') as outfile:
         # I'm writing a header here just for the sake of readability
-        outfile.write('bodyID,' + ",".join(weights_scr) + '\n')
+        outfile.write('bodyID,' + ",".join(weights_src) + '\n')
         
         for i in range(weights.shape[1]):
             bodyID = file_list[i].split('.')[0][-4:]
