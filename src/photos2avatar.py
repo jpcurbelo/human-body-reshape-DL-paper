@@ -182,7 +182,7 @@ def import_basic_info():
 
     except FileNotFoundError:
         # The file does not exist
-        logging.error(f"Error: Scaler file not found - '{tot_scaler_dir}'. Please check the file path.")
+        logging.warning(f"Warning: Scaler file not found - '{tot_scaler_dir}'. Please check the file path.")
         data_measX_scaler = None
 
     except (joblib.exc.JoblibValueError, Exception) as e:
