@@ -19,6 +19,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
+import gc
 
 # Check if any GPUs are available
 import tensorflow as tf
@@ -369,7 +370,8 @@ def extract_silhouette(input_images):
         sil = PIL.ImageOps.pad(sil, dim2, color="white", centering=(0.5, 0.5))
         sil = remove_transparency(sil).convert("L")
 
-        sil = np.array(sil).astype(float)
+        # sil = np.array(sil).astype(float)
+        sil = np.array(sil).astype(np.uint8)  # Instead of float
         sil = sil.reshape(sil.shape[0], sil.shape[1], 1)
 
         ## Save ORIGINAL silhouette image
@@ -397,6 +399,15 @@ def extract_silhouette(input_images):
 
         # sil_images.append(np.array(sil).astype(float) / 255)
         sil_images.append(sil)
+
+        # Delete variables and manually invoke garbage collection
+        del input_batch, output, output_predictions, sil
+        plt.close('all')  # Close figures to free memory
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        # Run garbage collection
+        gc.collect()
 
         print(f"-- Finished {view} view in {(time.time() - start_view):.1f} s")
 
