@@ -401,7 +401,15 @@ def extract_silhouette(input_images):
         sil_images.append(sil)
 
         # Delete variables and manually invoke garbage collection
-        del input_batch, output, output_predictions, sil
+        # Safely delete variables only if they exist
+        if 'input_batch' in locals():
+            del input_batch
+        if 'output' in locals():
+            del output
+        if 'output_predictions' in locals():
+            del output_predictions
+        if 'sil' in locals():
+            del sil
         plt.close('all')  # Close figures to free memory
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
