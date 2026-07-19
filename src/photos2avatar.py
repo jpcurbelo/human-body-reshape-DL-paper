@@ -9,7 +9,6 @@ import logging
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import keras
 import cv2 as cv
 import PIL
 import torch
@@ -23,6 +22,17 @@ import gc
 
 # Check if any GPUs are available
 import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.layers import (
+    Input,
+    Dense,
+    Conv2D,
+    Flatten,
+    Dropout,
+    MaxPooling2D,
+    concatenate,
+)
+from tensorflow.keras.models import Model
 gpus = tf.config.list_physical_devices('GPU')
 if not gpus:
     # No GPUs available, force TensorFlow to use CPU only
@@ -39,6 +49,7 @@ from utils import (
     VIEWS,
     OUTPUT_FILES_DIR,
     IMG_SIZE_4NN,
+    CHAN,
     UK_MEAS,
     M_NUM,
 )
@@ -55,17 +66,129 @@ from reshaper.avatar import Avatar
 IMG_RESIZE = 448  # 512   #512   # 256
 MODEL_NAME = "extractor_nn_model.h5"
 NUM_AUG_INPUT = 20
+EXTRACTOR_INPUT_SHAPE = len(GENDER_DICT) + len(CONTINUOUS)
 
 #########################################################################################
 def load_model(model_name):
     '''
     Loads a previously trained model.
     '''
+    model_path = os.path.join(MODEL_FILES_DIR, model_name)
     try:
-        return keras.models.load_model(os.path.join(MODEL_FILES_DIR, model_name))
+        return keras.models.load_model(model_path, compile=False)
     except FileNotFoundError as file_error:
         print(f"Error: File not found - {file_error.filename}")
         sys.exit(1)
+    except (ValueError, TypeError, OSError):
+        if model_name.lower().endswith(".h5"):
+            return load_legacy_extractor_model(model_path)
+        raise
+
+
+def load_legacy_extractor_model(model_path):
+    """
+    Rebuilds the legacy extractor architecture and loads weights from the saved HDF5 file.
+    """
+    mlp_model = create_mlp_model(in_mlp_layers=2)
+    cnn_model = create_cnn_model(in_cnn_layers=1, in_dense_layers=0)
+    model = create_combined_model(mlp_model, cnn_model)
+    model.load_weights(model_path)
+    return model
+
+
+def create_mlp_model(in_mlp_layers=1):
+    """
+    Creates the MLP branch used by the extractor model.
+    """
+    mlp_input = Input(shape=(EXTRACTOR_INPUT_SHAPE,), name="mlp_input")
+
+    mlp_hidden = Dense(16, activation="relu", name="mlp_hidden1")(mlp_input)
+
+    for i in range(in_mlp_layers):
+        mlp_hidden = Dense(
+            64,
+            activation="relu",
+            name=f"mlp_hiddenInner{i+1}",
+        )(mlp_hidden)
+
+    mlp_hidden = Dense(64, activation="relu", name="mlp_hidden2")(mlp_hidden)
+
+    mlp_output = Dense(len(UK_MEAS), activation="linear", name="mlp_output")(mlp_hidden)
+
+    return Model(mlp_input, mlp_output)
+
+
+KERNEL_SIZE = (3, 3)
+POOL_SIZE = (3, 3)
+
+
+def create_cnn_model(in_cnn_layers=1, in_dense_layers=0):
+    """
+    Creates the CNN branch used by the extractor model.
+    """
+    cnn_input = Input(shape=(IMG_SIZE_4NN, IMG_SIZE_4NN, CHAN), name="cnn_input")
+
+    cnn_hidden = Conv2D(96, (5, 5), activation="relu", name="cnn_hidden1")(cnn_input)
+    maxpool = MaxPooling2D(pool_size=POOL_SIZE)(cnn_hidden)
+
+    cnn_hidden = maxpool
+
+    for i in range(in_cnn_layers):
+        cnn_hidden = Conv2D(
+            128,
+            KERNEL_SIZE,
+            activation="relu",
+            name=f"cnn_hiddenInner{i+1}",
+        )(cnn_hidden)
+        cnn_hidden = MaxPooling2D(pool_size=POOL_SIZE)(cnn_hidden)
+
+    cnn_hidden = Conv2D(64, KERNEL_SIZE, activation="relu", name="cnn_hidden2")(cnn_hidden)
+    maxpool = MaxPooling2D(pool_size=POOL_SIZE)(cnn_hidden)
+
+    flatten = Flatten()(maxpool)
+
+    dense_hidden = Dense(500, activation="relu", name="dense_hidden1")(flatten)
+    dense_hidden = Dropout(0.3)(dense_hidden)
+
+    for i in range(in_dense_layers):
+        dense_hidden = Dense(
+            200,
+            activation="relu",
+            name=f"dense_hiddenInner{i+1}",
+        )(dense_hidden)
+        dense_hidden = Dropout(0.0)(dense_hidden)
+
+    dense_hidden = Dense(200, activation="relu", name="dense_hidden2")(dense_hidden)
+    dense_hidden = Dropout(0.5)(dense_hidden)
+
+    cnn_output = Dense(len(UK_MEAS), activation="linear", name="cnn_output")(dense_hidden)
+
+    return Model(cnn_input, cnn_output)
+
+
+def create_combined_model(mlp_model, cnn_model):
+    """
+    Creates the final combined extractor model.
+    """
+    input_numca = Input(shape=(EXTRACTOR_INPUT_SHAPE,), name="input_numca")
+    input_front = Input((IMG_SIZE_4NN, IMG_SIZE_4NN, CHAN), name="input_front")
+    input_side = Input((IMG_SIZE_4NN, IMG_SIZE_4NN, CHAN), name="input_side")
+
+    output_numca = mlp_model(input_numca)
+    output_front = cnn_model(input_front)
+    output_side = cnn_model(input_side)
+
+    combined_input = concatenate(
+        [output_numca, output_front, output_side], name="combined_input"
+    )
+
+    combined_hidden = Dense(
+        len(UK_MEAS) * 2, activation="relu", name="combined_hidden"
+    )(combined_input)
+
+    combined_output = Dense(len(UK_MEAS), activation="linear", name="combined_output")(combined_hidden)
+
+    return Model(inputs=[input_numca, input_front, input_side], outputs=combined_output)
         
 def create_measurements_array(extracted_measurements, weightkg_glob):
     '''
@@ -511,7 +634,8 @@ def measurements_from_sil(
             batch_size=1,
             shuffle=False,
             seed=random.randint(0, 100),
-        ).next()[0]
+        )
+        batch_img_front_aug = next(batch_img_front_aug)[0]
         
         # Generate augmented images and accumulate
         input_img_front_aug_accum.append(batch_img_front_aug)
@@ -520,7 +644,8 @@ def measurements_from_sil(
             batch_size=1,
             shuffle=False,
             seed=random.randint(0, 100),
-        ).next()[0]
+        )
+        batch_img_side_aug = next(batch_img_side_aug)[0]
         input_img_side_aug_accum.append(batch_img_side_aug)
 
     # Stack the accumulated images into arrays

@@ -321,7 +321,7 @@ class Avatar:
 
         return normals
 
-    def measure(self, save_file=True, out_meas_name=None):
+    def measure(self, save_file=True, out_meas_name=None, out_dir=OUTPUT_FILES_DIR):
         """Extract measurements from the 3D avatar
         Args:
             self
@@ -346,16 +346,21 @@ class Avatar:
 
         self.output_data = self.calc_measurements(cp, facets)
 
+        def as_float(value):
+            return float(np.asarray(value).reshape(-1)[0])
+
 
         if save_file == True:
             
             if out_meas_name == None:
-                meas_dir = os.path.join(OUTPUT_FILES_DIR, f"output_data_avatar_{self.gender}.csv")
+                meas_dir = os.path.join(out_dir, f"output_data_avatar_{self.gender}.csv")
             else:
-                meas_dir = os.path.join(OUTPUT_FILES_DIR, f"{out_meas_name}.csv")
+                meas_dir = os.path.join(out_dir, f"{out_meas_name}.csv")
             
+            os.makedirs(out_dir, exist_ok=True)
+
             ## Create output file
-            with open(meas_dir, "w") as file:
+            with open(meas_dir, "w", encoding="utf-8") as file:
 
                 file.write(
                     "_______________________________________________________________________________\n"
@@ -374,25 +379,26 @@ class Avatar:
                 )
 
                 for i, meas in enumerate(MEASUREMENTS):
+                    input_value = as_float(self.input_data[i])
+                    imputed_value = as_float(self.imputed_data[i])
+                    output_value = as_float(self.output_data[i])
 
-                    if abs(self.output_data[i]) < 1e-10:
+                    if abs(output_value) < 1e-10:
                         rel_err = None  # Or any other value you prefer
                     else:
                         rel_err = (
-                            abs(self.imputed_data[i] - self.output_data[i])
-                            / abs(self.output_data[i])
+                            abs(imputed_value - output_value)
+                            / abs(output_value)
                             * 100
                         )
 
+                    if rel_err is None:
+                        rel_err_text = "   n/a"
+                    else:
+                        rel_err_text = f"{rel_err:5.1f}%"
+
                     file.write(
-                        "%-21s|%-16.1f|%-16.1f|%-7.1f (%-5.1f%%) \n"
-                        % (
-                            meas,
-                            self.input_data[i],
-                            self.imputed_data[i],
-                            self.output_data[i],
-                            rel_err,
-                        )
+                        f"{meas:<21}|{input_value:<16.1f}|{imputed_value:<16.1f}|{output_value:<7.1f} ({rel_err_text}) \n"
                     )
 
                 file.write(
